@@ -24,3 +24,4 @@ feedparser==6.0.11
 # Task Scheduling & Utilities
 APScheduler==3.10.4
 python-dotenv==1.0.1
+pytest==8.1.1
