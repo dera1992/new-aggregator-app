@@ -8,6 +8,9 @@ from models.models import Article, db
 RSS_FEEDS = {
     'Tech': 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml',
     'Business': 'https://www.reutersagency.com/feed/?best-topics=business',
+    'World': 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+    'Politics': 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml',
+    'Sports': 'https://www.espn.com/espn/rss/news',
 }
 
 

@@ -43,6 +43,16 @@ def test_news_feed_filters_and_story_endpoint(tmp_path, monkeypatch):
             cluster_id=123,
         )
         db.session.add(article)
+        archive_article = Article(
+            title="Old Sports Story",
+            source_url="https://sports.example.com/story",
+            source_domain="sports.example.com",
+            raw_content="content",
+            ai_summary="sports summary",
+            category="Sports",
+            cluster_id=None,
+        )
+        db.session.add(archive_article)
         db.session.commit()
 
     token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
@@ -59,3 +69,9 @@ def test_news_feed_filters_and_story_endpoint(tmp_path, monkeypatch):
         assert story_response.status_code == 200
         story_payload = story_response.get_json()
         assert story_payload["cluster_id"] == 123
+
+        archive_response = client.get("/api/news/archive?category=Sports", headers=headers)
+        assert archive_response.status_code == 200
+        archive_payload = archive_response.get_json()
+        assert archive_payload["count"] == 1
+        assert archive_payload["articles"][0]["category"] == "Sports"
