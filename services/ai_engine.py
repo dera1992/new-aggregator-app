@@ -1,6 +1,7 @@
 from models.models import db, Article
 from openai import OpenAI
 import os
+from datetime import datetime
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -23,10 +24,17 @@ def process_unsummarized_news():
     for article in pending_articles:
         try:
             # 2. Call OpenAI to summarize the raw content
+            summary_style = article.summary_style or "bullets-3"
+            system_prompt = "Summarize this news in 3 bullet points."
+            if summary_style == "short":
+                system_prompt = "Summarize this news in 2 short sentences."
+            elif summary_style == "detailed":
+                system_prompt = "Summarize this news in 5 bullet points with key details."
+
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "Summarize this news in 3 bullet points."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": article.raw_content[:4000]}  # Context window safety
                 ],
                 temperature=0.3
@@ -34,9 +42,14 @@ def process_unsummarized_news():
 
             # 3. Update the database record
             article.ai_summary = response.choices[0].message.content.strip()
+            article.summary_error = None
+            article.processed_at = datetime.utcnow()
             db.session.commit()
             print(f"✅ Summarized: {article.title[:50]}...")
 
         except Exception as e:
             db.session.rollback()
+            article.summary_error = str(e)
+            article.processed_at = datetime.utcnow()
+            db.session.commit()
             print(f"❌ AI Error on article {article.id}: {e}")
