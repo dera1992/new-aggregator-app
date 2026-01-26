@@ -7,6 +7,7 @@ from utils.auth import (
     generate_token,
     hash_token,
     normalize_email,
+    is_valid_email,
     token_expiry,
 )
 from utils.decorators import token_required
@@ -22,11 +23,25 @@ def validate_password(password: str):
     return None
 
 
+def get_json_payload():
+    return request.get_json(silent=True) or {}
+
+
+def validate_email(email: str):
+    if not is_valid_email(email):
+        return "Email is invalid."
+    return None
+
+
 @auth_bp.route('/api/auth/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
     password = data.get('password')
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
 
     error = validate_password(password)
     if error:
@@ -58,9 +73,15 @@ def register():
 
 @auth_bp.route('/api/auth/confirm', methods=['POST'])
 def confirm_email():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
     token = data.get('token')
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
+    if not token:
+        return jsonify({"message": "Confirmation token is required."}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user or not user.confirm_token_hash:
@@ -83,12 +104,19 @@ def confirm_email():
 
 @auth_bp.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
     user = User.query.filter_by(email=email).first()
+    password = data.get('password')
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
+    if not password:
+        return jsonify({"message": "Password is required."}), 400
 
     # Verify password
-    if user and user.check_password(data.get('password')):
+    if user and user.check_password(password):
         if not user.is_email_confirmed:
             return jsonify({"message": "Email not confirmed"}), 403
         if not user.is_active:
@@ -106,8 +134,13 @@ def login():
 
 @auth_bp.route('/api/auth/resend-confirmation', methods=['POST'])
 def resend_confirmation():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
+
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"message": "User not found"}), 404
@@ -129,8 +162,13 @@ def resend_confirmation():
 
 @auth_bp.route('/api/auth/forgot-password', methods=['POST'])
 def forgot_password():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
+
     user = User.query.filter_by(email=email).first()
     if not user:
         return jsonify({"message": "If that account exists, a reset email has been sent."}), 200
@@ -150,10 +188,16 @@ def forgot_password():
 
 @auth_bp.route('/api/auth/reset-password', methods=['POST'])
 def reset_password():
-    data = request.get_json()
+    data = get_json_payload()
     email = normalize_email(data.get('email'))
     token = data.get('token')
     new_password = data.get('new_password')
+
+    email_error = validate_email(email)
+    if email_error:
+        return jsonify({"message": email_error}), 400
+    if not token:
+        return jsonify({"message": "Reset token is required."}), 400
 
     error = validate_password(new_password)
     if error:
@@ -179,9 +223,12 @@ def reset_password():
 @auth_bp.route('/api/auth/change-password', methods=['POST'])
 @token_required
 def change_password():
-    data = request.get_json()
+    data = get_json_payload()
     current_password = data.get('current_password')
     new_password = data.get('new_password')
+
+    if not current_password:
+        return jsonify({"message": "Current password is required."}), 400
 
     error = validate_password(new_password)
     if error:

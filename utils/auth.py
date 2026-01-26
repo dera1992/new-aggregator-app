@@ -1,10 +1,17 @@
 import hashlib
 import secrets
 from datetime import datetime, timedelta
+import re
 
 
 def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
+
+
+def is_valid_email(email: str) -> bool:
+    if not email:
+        return False
+    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) is not None
 
 
 def generate_token() -> str:

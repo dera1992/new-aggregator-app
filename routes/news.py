@@ -17,7 +17,7 @@ def get_clustered_feed():
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
-    query = Article.query.filter(Article.cluster_id != None)
+    query = Article.query.filter(Article.cluster_id.isnot(None))
     if category:
         query = query.filter(Article.category == category)
     if source:
