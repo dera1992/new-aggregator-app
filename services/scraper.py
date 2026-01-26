@@ -17,11 +17,13 @@ RSS_FEEDS = {
 def run_harvester():
     """Loops through RSS feeds and saves new content to DB."""
     headers = {"User-Agent": "new-aggregator-app/1.0"}
+    seen_urls = set()
+    seen_hashes = set()
     for category, url in RSS_FEEDS.items():
         feed = feedparser.parse(url)
         for entry in feed.entries:
             # Avoid duplicates by source URL
-            if Article.query.filter_by(source_url=entry.link).first():
+            if entry.link in seen_urls or Article.query.filter_by(source_url=entry.link).first():
                 continue
 
             try:
@@ -45,10 +47,15 @@ def run_harvester():
                 new_article.set_content_hash()
 
                 # Avoid duplicates by content hash
-                if Article.query.filter_by(content_hash=new_article.content_hash).first():
+                if (
+                    new_article.content_hash in seen_hashes
+                    or Article.query.filter_by(content_hash=new_article.content_hash).first()
+                ):
                     continue
 
                 db.session.add(new_article)
+                seen_urls.add(entry.link)
+                seen_hashes.add(new_article.content_hash)
             except Exception as exc:
                 print(f"❌ Scraper error for {entry.link}: {exc}")
     db.session.commit()
