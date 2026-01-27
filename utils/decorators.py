@@ -16,7 +16,10 @@ def token_required(f):
             if not user or not user.is_active:
                 return jsonify({'message': 'User is inactive or missing'}), 401
             g.current_user = user
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid!'}), 401
         except Exception:
+            current_app.logger.exception("Unexpected token validation error.")
             return jsonify({'message': 'Token is invalid!'}), 401
         return f(*args, **kwargs)
     return decorated
