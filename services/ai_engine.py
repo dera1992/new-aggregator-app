@@ -35,7 +35,10 @@ def process_unsummarized_news():
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": article.raw_content[:4000]}  # Context window safety
+                    {
+                        "role": "user",
+                        "content": (article.raw_content or "")[:4000],
+                    }  # Context window safety
                 ],
                 temperature=0.3
             )
