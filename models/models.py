@@ -36,6 +36,8 @@ class Article(db.Model):
     ai_summary = db.Column(db.Text)
     summary_style = db.Column(db.String(50), default="bullets-3")
     summary_error = db.Column(db.Text)
+    fetch_status= db.Column(db.String(50))
+    rss_summary= db.Column(db.Text)
     category = db.Column(db.String(50))
     cluster_id = db.Column(db.Integer)
     content_hash = db.Column(db.String(64), unique=True, index=True)
