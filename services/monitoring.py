@@ -1,3 +1,5 @@
+"""Monitoring helpers for APScheduler job runs, failures, and alerting."""
+
 import logging
 import os
 import time
@@ -55,6 +57,8 @@ def record_job_missed(job_id: str) -> None:
 
 
 def send_alert(job_id: str, summary: str, details: Optional[str] = None) -> None:
+    # Alerts are sent via the email service; set ALERT_EMAIL_TO and optionally
+    # ALERT_THROTTLE_SECONDS to control recipient and throttling behavior.
     alert_email = os.getenv("ALERT_EMAIL_TO")
     if not alert_email:
         LOGGER.warning(
