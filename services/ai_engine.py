@@ -3,7 +3,9 @@ from openai import OpenAI
 import os
 from datetime import datetime
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 
 def process_unsummarized_news():
