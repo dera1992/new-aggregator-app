@@ -45,3 +45,32 @@ class Article(db.Model):
     def set_content_hash(self):
         payload = f"{self.title}|{self.source_url}|{self.raw_content or ''}"
         self.content_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+class UserPreferences(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    preferred_categories = db.Column(db.JSON, default=list)
+    preferred_sources = db.Column(db.JSON, default=list)
+    digest_time = db.Column(db.String(5), default="08:00")
+    digest_enabled = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SavedArticle(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    article_id = db.Column(db.Integer, db.ForeignKey("article.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "article_id", name="uniq_user_saved"),)
+
+
+class ReadArticle(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    article_id = db.Column(db.Integer, db.ForeignKey("article.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint("user_id", "article_id", name="uniq_user_read"),)

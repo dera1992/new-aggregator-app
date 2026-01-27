@@ -1,6 +1,6 @@
 from datetime import datetime
-from flask import Blueprint, jsonify, request
-from models.models import Article
+from flask import Blueprint, jsonify, request, g
+from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
 from utils.decorators import token_required
 
 # Define the Blueprint
@@ -17,7 +17,7 @@ def get_clustered_feed():
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
-    query = Article.query.filter(Article.cluster_id != None)
+    query = Article.query.filter(Article.cluster_id.isnot(None))
     if category:
         query = query.filter(Article.category == category)
     if source:
@@ -54,6 +54,64 @@ def get_clustered_feed():
         "count": len(stories),
         "offset": offset,
         "limit": limit
+    })
+
+
+@news_bp.route("/api/news/personalized", methods=["GET"])
+@token_required
+def get_personalized_feed():
+    category = request.args.get("category")
+    source = request.args.get("source")
+    since = request.args.get("since")
+    limit = min(int(request.args.get("limit", 100)), 200)
+    offset = int(request.args.get("offset", 0))
+
+    preferences = UserPreferences.query.filter_by(user_id=g.current_user.id).first()
+    preferred_categories = preferences.preferred_categories if preferences else []
+    preferred_sources = preferences.preferred_sources if preferences else []
+
+    query = Article.query.filter(Article.cluster_id.isnot(None))
+    if preferred_categories:
+        query = query.filter(Article.category.in_(preferred_categories))
+    if preferred_sources:
+        query = query.filter(Article.source_domain.in_(preferred_sources))
+    if category:
+        query = query.filter(Article.category == category)
+    if source:
+        query = query.filter(Article.source_domain == source)
+    if since:
+        try:
+            since_dt = datetime.fromisoformat(since)
+            query = query.filter(Article.created_at >= since_dt)
+        except ValueError:
+            return jsonify({"message": "Invalid 'since' format. Use ISO-8601."}), 400
+
+    articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()
+
+    stories = {}
+    for a in articles:
+        cid = a.cluster_id
+        if cid not in stories:
+            stories[cid] = {
+                "story_title": a.title,
+                "summary": a.ai_summary,
+                "sources": [],
+                "timestamp": a.created_at.isoformat()
+            }
+        stories[cid]["sources"].append({
+            "name": a.source_domain,
+            "url": a.source_url
+        })
+
+    return jsonify({
+        "stories": list(stories.values()),
+        "count": len(stories),
+        "offset": offset,
+        "limit": limit,
+        "preferences": {
+            "preferred_categories": preferred_categories,
+            "preferred_sources": preferred_sources,
+        },
     })
 
 
@@ -117,3 +175,103 @@ def get_story(cluster_id):
             for a in articles
         ]
     })
+
+
+@news_bp.route("/api/news/save", methods=["POST"])
+@token_required
+def save_article():
+    data = request.get_json(silent=True) or {}
+    article_id = data.get("article_id")
+    if not article_id:
+        return jsonify({"message": "article_id is required."}), 400
+
+    article = db.session.get(Article, article_id)
+    if not article:
+        return jsonify({"message": "Article not found."}), 404
+
+    existing = SavedArticle.query.filter_by(
+        user_id=g.current_user.id,
+        article_id=article_id,
+    ).first()
+    if existing:
+        return jsonify({"message": "Article already saved."}), 200
+
+    saved = SavedArticle(user_id=g.current_user.id, article_id=article_id)
+    db.session.add(saved)
+    db.session.commit()
+    return jsonify({"message": "Article saved."}), 201
+
+
+@news_bp.route("/api/news/saved", methods=["GET"])
+@token_required
+def list_saved_articles():
+    saved_entries = (
+        SavedArticle.query.filter_by(user_id=g.current_user.id)
+        .order_by(SavedArticle.created_at.desc())
+        .all()
+    )
+    articles = []
+    for entry in saved_entries:
+        article = db.session.get(Article, entry.article_id)
+        if article:
+            articles.append({
+                "title": article.title,
+                "summary": article.ai_summary,
+                "category": article.category,
+                "source": article.source_domain,
+                "url": article.source_url,
+                "timestamp": article.created_at.isoformat(),
+                "cluster_id": article.cluster_id,
+                "saved_at": entry.created_at.isoformat(),
+            })
+    return jsonify({"articles": articles, "count": len(articles)})
+
+
+@news_bp.route("/api/news/read", methods=["POST"])
+@token_required
+def mark_article_read():
+    data = request.get_json(silent=True) or {}
+    article_id = data.get("article_id")
+    if not article_id:
+        return jsonify({"message": "article_id is required."}), 400
+
+    article = db.session.get(Article, article_id)
+    if not article:
+        return jsonify({"message": "Article not found."}), 404
+
+    existing = ReadArticle.query.filter_by(
+        user_id=g.current_user.id,
+        article_id=article_id,
+    ).first()
+    if existing:
+        return jsonify({"message": "Article already marked as read."}), 200
+
+    read_entry = ReadArticle(user_id=g.current_user.id, article_id=article_id)
+    db.session.add(read_entry)
+    db.session.commit()
+    return jsonify({"message": "Article marked as read."}), 201
+
+
+@news_bp.route("/api/news/read-articles", methods=["GET"])
+@token_required
+def list_read_articles():
+    read_entries = (
+        ReadArticle.query.filter_by(user_id=g.current_user.id)
+        .order_by(ReadArticle.created_at.desc())
+        .all()
+    )
+    articles = []
+    for entry in read_entries:
+        article = db.session.get(Article, entry.article_id)
+        if article:
+            articles.append({
+                "title": article.title,
+                "summary": article.ai_summary,
+                "category": article.category,
+                "source": article.source_domain,
+                "url": article.source_url,
+                "timestamp": article.created_at.isoformat(),
+                "cluster_id": article.cluster_id,
+                "read_at": entry.created_at.isoformat(),
+            })
+    return jsonify({"articles": articles, "count": len(articles)})
