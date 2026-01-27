@@ -3,6 +3,7 @@ from flask import Flask
 from models.models import db
 from routes.news import news_bp # Import your new blueprint
 from routes.auth import auth_bp
+from routes.preferences import preferences_bp
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
@@ -16,6 +17,7 @@ if os.getenv("TESTING") == "1":
 # REGISTER BLUEPRINTS
 app.register_blueprint(auth_bp)
 app.register_blueprint(news_bp)
+app.register_blueprint(preferences_bp)
 
 db.init_app(app)
 
