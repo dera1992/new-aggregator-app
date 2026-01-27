@@ -3,6 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from services.clustering_engine import cluster_recent_articles
 from services.scraper import run_harvester
 from services.ai_engine import process_unsummarized_news
+from services.digest_service import send_daily_digests
 from utils.redis_client import get_redis_client
 import uuid
 
@@ -42,6 +43,12 @@ def start_background_jobs(app):
     scheduler.add_job(
         func=lambda: run_with_context(cluster_recent_articles, "locks:cluster", 20 * 60),
         trigger="interval", minutes=25
+    )
+
+    # Step 4: Send daily digests (Every 15m)
+    scheduler.add_job(
+        func=lambda: run_with_context(send_daily_digests, "locks:daily_digest", 10 * 60),
+        trigger="interval", minutes=15
     )
 
     scheduler.start()
