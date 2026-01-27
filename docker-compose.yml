@@ -8,11 +8,26 @@ services:
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/news_db
       SECRET_KEY: change-me
+      RUN_DB_INIT: "true"
+      RUN_BACKGROUND_JOBS: "false"   # IMPORTANT: app should not run jobs
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build: .
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DATABASE_URL: postgresql://user:password@db:5432/news_db
+      SECRET_KEY: change-me
+      RUN_DB_INIT: "false"
       RUN_BACKGROUND_JOBS: "true"
       REDIS_URL: redis://redis:6379/0
     depends_on:
       - db
       - redis
+    command: ["sh", "-c", "/entrypoint.sh python run_jobs.py"]
 
   db:
     image: postgres:15-alpine
