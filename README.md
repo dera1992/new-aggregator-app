@@ -19,6 +19,18 @@ A Flask-based news aggregation service that scrapes sources, summarizes articles
 
 ## Running the Application
 
+### Docker
+
+Build and run with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The API will be available at http://localhost:8080. Environment variables are configured in `docker-compose.yml`, including the PostgreSQL and Redis services.
+
+### Local Development
+
 1. **Install dependencies**
    ```bash
    python -m venv .venv
