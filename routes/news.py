@@ -3,9 +3,11 @@ from flask import Blueprint, jsonify, request, g
 from pydantic import ValidationError
 from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
 from schemas.comment import CommentRequest
+from schemas.analysis import AnalysisRequest
 from schemas.joke import JokeRequest
 from schemas.viral_post import ViralPostRequest
 from services.comment_generator import generate_comment, CommentGenError
+from services.analysis_generator import generate_analysis, AnalysisGenError
 from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
 from utils.decorators import token_required
@@ -346,6 +348,23 @@ def generate_joke_endpoint():
     try:
         result = generate_joke(**request_data.model_dump())
     except JokeGenError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+    return jsonify(result)
+
+
+@news_bp.route("/api/news/generate-analysis", methods=["POST"])
+@token_required
+def generate_analysis_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = AnalysisRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    try:
+        result = generate_analysis(**request_data.model_dump())
+    except AnalysisGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
     return jsonify(result)

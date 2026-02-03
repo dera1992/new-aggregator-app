@@ -123,3 +123,34 @@ export type GenerateJokeResponse = {
   warnings: string[];
   jokes: JokeItem[];
 };
+
+export type AnalysisFormat = 'brief' | 'standard' | 'deep';
+export type AnalysisTone = 'neutral' | 'insightful' | 'skeptical' | 'optimistic';
+export type AnalysisAudience = 'general' | 'business' | 'tech' | 'policy' | 'investors';
+
+export type GenerateAnalysisRequest = {
+  summary: string;
+  format: AnalysisFormat;
+  tone: AnalysisTone;
+  audience: AnalysisAudience;
+  include_takeaways: boolean;
+  include_counterpoints: boolean;
+  include_what_to_watch: boolean;
+  fact_mode: boolean;
+};
+
+export type AnalysisVariant = {
+  title: string;
+  hook: string;
+  analysis: string;
+  key_takeaways: string[];
+  counterpoints: string[];
+  what_to_watch: string[];
+  reading_time_seconds: number;
+};
+
+export type GenerateAnalysisResponse = {
+  best_variant_index: number;
+  warnings: string[];
+  variants: AnalysisVariant[];
+};
