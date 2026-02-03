@@ -2,7 +2,9 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request, g
 from pydantic import ValidationError
 from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
+from schemas.comment import CommentRequest
 from schemas.viral_post import ViralPostRequest
+from services.comment_generator import generate_comment, CommentGenError
 from services.viral_generator import generate_viral_post, ViralPostError
 from utils.decorators import token_required
 
@@ -292,6 +294,23 @@ def generate_viral_post_endpoint():
     try:
         result = generate_viral_post(**request_data.model_dump())
     except ViralPostError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+    return jsonify(result)
+
+
+@news_bp.route("/api/news/generate-comment", methods=["POST"])
+@token_required
+def generate_comment_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = CommentRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    try:
+        result = generate_comment(**request_data.model_dump())
+    except CommentGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
     return jsonify(result)
