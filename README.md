@@ -77,9 +77,11 @@ The production-ready Next.js frontend lives inside this Flask repo at `frontend/
 
 ```bash
 cd frontend
-pnpm install
+npm install
 cp .env.example .env.local
-pnpm dev
+npm run dev
 ```
+
+If you prefer pnpm, install it first (`npm install -g pnpm`) and then run `pnpm install` and `pnpm dev`.
 
 The frontend reads `NEXT_PUBLIC_API_URL` from `.env.local` to reach the Flask API.
