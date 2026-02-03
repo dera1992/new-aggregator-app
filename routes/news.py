@@ -1,6 +1,9 @@
 from datetime import datetime
 from flask import Blueprint, jsonify, request, g
+from pydantic import ValidationError
 from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
+from schemas.viral_post import ViralPostRequest
+from services.viral_generator import generate_viral_post, ViralPostError
 from utils.decorators import token_required
 
 # Define the Blueprint
@@ -275,3 +278,20 @@ def list_read_articles():
                 "read_at": entry.created_at.isoformat(),
             })
     return jsonify({"articles": articles, "count": len(articles)})
+
+
+@news_bp.route("/api/news/generate-viral-post", methods=["POST"])
+@token_required
+def generate_viral_post_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = ViralPostRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    try:
+        result = generate_viral_post(**request_data.model_dump())
+    except ViralPostError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+    return jsonify(result)
