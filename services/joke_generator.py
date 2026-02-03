@@ -23,14 +23,26 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
 def _validate_payload(data: Dict[str, Any]) -> None:
     if not isinstance(data, dict):
         raise JokeGenError("Model JSON must be an object.")
-    if "variants" not in data:
+    required_top = {"best_variant_index", "warnings", "jokes"}
+    if not required_top.issubset(data.keys()):
         raise JokeGenError("Model JSON missing required fields.")
-    variants = data.get("variants")
-    if not isinstance(variants, list) or not variants:
-        raise JokeGenError("Model JSON variants must be a non-empty list.")
-    for variant in variants:
-        if not isinstance(variant, dict) or "text" not in variant:
-            raise JokeGenError("Each variant must include a text field.")
+    jokes = data.get("jokes")
+    if not isinstance(jokes, list) or not jokes:
+        raise JokeGenError("Model JSON jokes must be a non-empty list.")
+    for joke in jokes:
+        if not isinstance(joke, dict):
+            raise JokeGenError("Each joke must be an object.")
+        required_fields = {"style", "setup", "punchline", "full_joke", "cta"}
+        if not required_fields.issubset(joke.keys()):
+            raise JokeGenError("Each joke must include style, setup, punchline, full_joke, and cta.")
+    if not isinstance(data["best_variant_index"], int):
+        raise JokeGenError("best_variant_index must be a number.")
+    if data["best_variant_index"] < 0 or data["best_variant_index"] >= len(jokes):
+        raise JokeGenError("best_variant_index is out of range for jokes list.")
+    if not isinstance(data["warnings"], list):
+        raise JokeGenError("warnings must be a list.")
+    if any(not isinstance(warning, str) for warning in data["warnings"]):
+        raise JokeGenError("warnings must be a list of strings.")
 
 
 def generate_joke(

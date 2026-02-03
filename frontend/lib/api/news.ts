@@ -8,6 +8,8 @@ import type {
   ReadArticlesResponse,
   ViralPostResponse,
   CommentResponse,
+  GenerateJokeRequest,
+  GenerateJokeResponse,
 } from '@/types/news';
 
 export type FeedQuery = {
@@ -86,6 +88,13 @@ export function generateViralPost(payload: Record<string, unknown>) {
 
 export function generateComment(payload: Record<string, unknown>) {
   return apiFetch<CommentResponse>(`/api/news/generate-comment`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function generateJoke(payload: GenerateJokeRequest) {
+  return apiFetch<GenerateJokeResponse>(`/api/news/generate-joke`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
