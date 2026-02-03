@@ -47,4 +47,4 @@ def cluster_recent_articles(window_hours=24):
         article.cluster_id = base_id + int(labels[i])
 
     db.session.commit()
-    print(f"🧩 Successfully grouped {len(articles)} articles into {len(set(labels))} stories.")
+    print(f" Successfully grouped {len(articles)} articles into {len(set(labels))} stories.")

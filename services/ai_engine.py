@@ -18,10 +18,10 @@ def process_unsummarized_news():
     pending_articles = Article.query.filter(Article.ai_summary == None).limit(10).all()
 
     if not pending_articles:
-        print("☕ No new articles to process.")
+        print("No new articles to process.")
         return
 
-    print(f"🤖 AI is processing {len(pending_articles)} new articles...")
+    print(f"AI is processing {len(pending_articles)} new articles...")
 
     for article in pending_articles:
         try:
@@ -50,11 +50,11 @@ def process_unsummarized_news():
             article.summary_error = None
             article.processed_at = datetime.utcnow()
             db.session.commit()
-            print(f"✅ Summarized: {article.title[:50]}...")
+            print(f" Summarized: {article.title[:50]}...")
 
         except Exception as e:
             db.session.rollback()
             article.summary_error = str(e)
             article.processed_at = datetime.utcnow()
             db.session.commit()
-            print(f"❌ AI Error on article {article.id}: {e}")
+            print(f" AI Error on article {article.id}: {e}")
