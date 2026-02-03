@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { CopyButton } from '@/components/copy-button';
+import { JokeGenerator } from '@/components/JokeGenerator';
 import { loadGeneratorDefaults } from '@/lib/utils/generator-defaults';
 
 const viralSchema = z.object({
@@ -426,6 +427,8 @@ export default function StoryPage() {
             )}
           </CardContent>
         </Card>
+
+        <JokeGenerator summary={storyQuery.data.summary} />
       </div>
     </div>
   );

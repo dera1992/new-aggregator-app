@@ -84,3 +84,42 @@ export type CommentResponse = {
   warnings: string[];
   comments: CommentVariant[];
 };
+
+export enum JokePlatform {
+  General = 'General',
+  Twitter = 'Twitter',
+  LinkedIn = 'LinkedIn',
+  Instagram = 'Instagram',
+  Reddit = 'Reddit',
+}
+
+export enum JokeStyle {
+  Pun = 'pun',
+  OneLiner = 'one_liner',
+  Observational = 'observational',
+  SatireLight = 'satire_light',
+  DadJoke = 'dad_joke',
+}
+
+export type GenerateJokeRequest = {
+  summary: string;
+  platform: JokePlatform;
+  style: JokeStyle;
+  audience?: string;
+  max_variants: number;
+  fact_mode: boolean;
+};
+
+export type JokeItem = {
+  style: string;
+  setup: string;
+  punchline: string;
+  full_joke: string;
+  cta: string;
+};
+
+export type GenerateJokeResponse = {
+  best_variant_index: number;
+  warnings: string[];
+  jokes: JokeItem[];
+};
