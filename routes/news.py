@@ -43,15 +43,19 @@ def get_clustered_feed():
         cid = a.cluster_id
         if cid not in stories:
             stories[cid] = {
+                "cluster_id": cid,
                 "story_title": a.title,
                 "summary": a.ai_summary,
                 "sources": [],
-                "timestamp": a.created_at.isoformat()  # Convert for JSON
+                "timestamp": a.created_at.isoformat(),  # Convert for JSON
+                "lead_article_id": a.id,
             }
 
         stories[cid]["sources"].append({
+            "article_id": a.id,
             "name": a.source_domain,
-            "url": a.source_url
+            "url": a.source_url,
+            "title": a.title,
         })
 
     return jsonify({
@@ -98,14 +102,18 @@ def get_personalized_feed():
         cid = a.cluster_id
         if cid not in stories:
             stories[cid] = {
+                "cluster_id": cid,
                 "story_title": a.title,
                 "summary": a.ai_summary,
                 "sources": [],
-                "timestamp": a.created_at.isoformat()
+                "timestamp": a.created_at.isoformat(),
+                "lead_article_id": a.id,
             }
         stories[cid]["sources"].append({
+            "article_id": a.id,
             "name": a.source_domain,
-            "url": a.source_url
+            "url": a.source_url,
+            "title": a.title,
         })
 
     return jsonify({
@@ -153,6 +161,7 @@ def get_news_archive():
                 "url": a.source_url,
                 "timestamp": a.created_at.isoformat(),
                 "cluster_id": a.cluster_id,
+                "article_id": a.id,
             }
             for a in articles
         ],
@@ -176,7 +185,12 @@ def get_story(cluster_id):
         "story_title": articles[0].title,
         "summary": articles[0].ai_summary,
         "sources": [
-            {"name": a.source_domain, "url": a.source_url, "title": a.title}
+            {
+                "article_id": a.id,
+                "name": a.source_domain,
+                "url": a.source_url,
+                "title": a.title,
+            }
             for a in articles
         ]
     })
@@ -220,6 +234,7 @@ def list_saved_articles():
         article = db.session.get(Article, entry.article_id)
         if article:
             articles.append({
+                "article_id": article.id,
                 "title": article.title,
                 "summary": article.ai_summary,
                 "category": article.category,
@@ -270,6 +285,7 @@ def list_read_articles():
         article = db.session.get(Article, entry.article_id)
         if article:
             articles.append({
+                "article_id": article.id,
                 "title": article.title,
                 "summary": article.ai_summary,
                 "category": article.category,
