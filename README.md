@@ -70,3 +70,16 @@ Run the test suite with:
 ```bash
 pytest
 ```
+
+## Frontend (Next.js)
+
+The production-ready Next.js frontend lives inside this Flask repo at `frontend/`, so you can run it alongside the API without moving directories outside of the project tree.
+
+```bash
+cd frontend
+pnpm install
+cp .env.example .env.local
+pnpm dev
+```
+
+The frontend reads `NEXT_PUBLIC_API_URL` from `.env.local` to reach the Flask API.
