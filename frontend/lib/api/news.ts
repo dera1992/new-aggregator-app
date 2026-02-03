@@ -10,6 +10,8 @@ import type {
   CommentResponse,
   GenerateJokeRequest,
   GenerateJokeResponse,
+  GenerateAnalysisRequest,
+  GenerateAnalysisResponse,
 } from '@/types/news';
 
 export type FeedQuery = {
@@ -95,6 +97,13 @@ export function generateComment(payload: Record<string, unknown>) {
 
 export function generateJoke(payload: GenerateJokeRequest) {
   return apiFetch<GenerateJokeResponse>(`/api/news/generate-joke`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function generateAnalysis(payload: GenerateAnalysisRequest) {
+  return apiFetch<GenerateAnalysisResponse>(`/api/news/generate-analysis`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });

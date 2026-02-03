@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { CopyButton } from '@/components/copy-button';
 import { JokeGenerator } from '@/components/JokeGenerator';
+import { AnalysisGenerator } from '@/components/AnalysisGenerator';
 import { loadGeneratorDefaults } from '@/lib/utils/generator-defaults';
 
 const viralSchema = z.object({
@@ -428,6 +429,9 @@ export default function StoryPage() {
           </CardContent>
         </Card>
 
+        <div className="lg:col-span-2">
+          <AnalysisGenerator summary={storyQuery.data.summary} />
+        </div>
         <JokeGenerator summary={storyQuery.data.summary} />
       </div>
     </div>
