@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import './globals.css';
-import { Providers } from '@/app/providers';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'News Aggregator',
