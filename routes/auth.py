@@ -1,5 +1,7 @@
-import jwt
 import datetime
+from urllib.parse import urlencode
+
+import jwt
 from flask import Blueprint, request, jsonify, current_app, g
 from models.models import db, User
 from services.email_service import send_email
@@ -33,6 +35,12 @@ def validate_email(email: str):
     return None
 
 
+def build_confirmation_link(email: str, token: str) -> str:
+    base_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    query = urlencode({"email": email, "token": token})
+    return f"{base_url}/confirm?{query}"
+
+
 @auth_bp.route('/api/auth/register', methods=['POST'])
 def register():
     data = get_json_payload()
@@ -62,10 +70,14 @@ def register():
     db.session.add(new_user)
     db.session.commit()
 
+    confirmation_link = build_confirmation_link(email, confirm_token)
     send_email(
         to_email=email,
         subject="Confirm your account",
-        body=f"Use this token to confirm your account: {confirm_token}",
+        body=(
+            "Click this link to confirm your account:\n"
+            f"{confirmation_link}"
+        ),
     )
 
     return jsonify({"message": "User created successfully. Check email to confirm."}), 201
@@ -152,10 +164,14 @@ def resend_confirmation():
     user.confirm_token_expires_at = token_expiry(hours=24)
     db.session.commit()
 
+    confirmation_link = build_confirmation_link(email, confirm_token)
     send_email(
         to_email=email,
         subject="Confirm your account",
-        body=f"Use this token to confirm your account: {confirm_token}",
+        body=(
+            "Click this link to confirm your account:\n"
+            f"{confirmation_link}"
+        ),
     )
     return jsonify({"message": "Confirmation email resent"}), 200
 
