@@ -100,9 +100,9 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
+          <CardTitle className="break-words">Profile</CardTitle>
         </CardHeader>
         <CardContent>
           {isProfileLoading ? (
@@ -133,9 +133,9 @@ export default function SettingsPage() {
       </Card>
 
       {profile && (
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
-            <CardTitle>Subscription</CardTitle>
+            <CardTitle className="break-words">Subscription</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <div>Tier: {profile.subscription_tier ?? 'N/A'}</div>
@@ -145,9 +145,9 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
+          <CardTitle className="break-words">Appearance</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <div>Current theme: <span className="font-medium text-foreground">{resolvedTheme}</span></div>
@@ -157,9 +157,9 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Change password</CardTitle>
+          <CardTitle className="break-words">Change password</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -199,12 +199,12 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Generator defaults</CardTitle>
+          <CardTitle className="break-words">Generator defaults</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Default tone</Label>
               <Select
@@ -245,7 +245,7 @@ export default function SettingsPage() {
               </Select>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Default brand voice</Label>
               <Input
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Default comment style</Label>
               <Select

@@ -22,6 +22,7 @@ import { CopyButton } from '@/components/copy-button';
 import { JokeGenerator } from '@/components/JokeGenerator';
 import { AnalysisGenerator } from '@/components/AnalysisGenerator';
 import { loadGeneratorDefaults } from '@/lib/utils/generator-defaults';
+import { ShareActions } from '@/components/share-actions';
 
 const viralSchema = z.object({
   platform: z.enum(['Twitter', 'LinkedIn', 'Instagram']),
@@ -44,6 +45,19 @@ const commentSchema = z.object({
 });
 
 type CommentValues = z.infer<typeof commentSchema>;
+
+const buildViralCopy = (variant: {
+  hook: string;
+  body: string;
+  hashtags: string[];
+  thread?: string[];
+}) =>
+  `${variant.hook}\n\n${variant.body}` +
+  (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
+  `\n\n${variant.hashtags.join(' ')}`;
+
+const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
+  [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
 
 export default function StoryPage() {
   const params = useParams();
@@ -144,13 +158,13 @@ export default function StoryPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>{storyQuery.data.story_title}</CardTitle>
+          <CardTitle className="break-words">{storyQuery.data.story_title}</CardTitle>
           <p className="text-sm text-muted-foreground">Cluster {storyQuery.data.cluster_id}</p>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">{storyQuery.data.summary}</p>
+          <p className="break-words text-sm text-muted-foreground">{storyQuery.data.summary}</p>
           <div className="space-y-2">
             {storyQuery.data.sources.map((source) => (
               <div key={source.url} className="text-sm">
@@ -170,7 +184,7 @@ export default function StoryPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Viral Post Generator</CardTitle>
           </CardHeader>
@@ -278,7 +292,7 @@ export default function StoryPage() {
             {viralMutation.data && (
               <div className="space-y-4">
                 {viralMutation.data.variants.map((variant, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="w-full min-w-0">
                     <CardHeader>
                       <CardTitle className="text-base">
                         Variant {index + 1}
@@ -305,11 +319,11 @@ export default function StoryPage() {
                         <strong>Hashtags:</strong> {variant.hashtags.join(' ')}
                       </div>
                       <CopyButton
-                        value={
-                          `${variant.hook}\n\n${variant.body}` +
-                          (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
-                          `\n\n${variant.hashtags.join(' ')}`
-                        }
+                        value={buildViralCopy(variant)}
+                      />
+                      <ShareActions
+                        title={`Viral post variant ${index + 1}`}
+                        text={buildViralCopy(variant)}
                       />
                     </CardContent>
                   </Card>
@@ -319,7 +333,7 @@ export default function StoryPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Comment Generator</CardTitle>
           </CardHeader>
@@ -411,7 +425,7 @@ export default function StoryPage() {
             {commentMutation.data && (
               <div className="space-y-4">
                 {commentMutation.data.comments.map((comment, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="w-full min-w-0">
                     <CardHeader>
                       <CardTitle className="text-base">
                         Variant {index + 1} · {comment.tone}
@@ -420,7 +434,11 @@ export default function StoryPage() {
                     <CardContent className="space-y-2 text-sm">
                       <p>{comment.comment}</p>
                       <p className="text-muted-foreground">CTA: {comment.cta_question}</p>
-                      <CopyButton value={`${comment.comment}\n\n${comment.cta_question}`} />
+                      <CopyButton value={buildCommentCopy(comment)} />
+                      <ShareActions
+                        title={`Comment variant ${index + 1}`}
+                        text={buildCommentCopy(comment)}
+                      />
                     </CardContent>
                   </Card>
                 ))}

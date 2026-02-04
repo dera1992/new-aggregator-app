@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CopyButton } from '@/components/copy-button';
+import { ShareActions } from '@/components/share-actions';
 import type { GenerateAnalysisResponse } from '@/types/news';
 
 const analysisSchema = z.object({
@@ -280,6 +281,10 @@ export function AnalysisGenerator({ summary }: AnalysisGeneratorProps) {
                         </ul>
                       </div>
                     )}
+                    <ShareActions
+                      title={variant.title || 'Analysis'}
+                      text={buildVariantCopy(variant)}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
