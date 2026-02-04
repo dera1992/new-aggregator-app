@@ -2,7 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogOut, Newspaper, Archive, Bookmark, CheckCircle2, Settings, SlidersHorizontal } from 'lucide-react';
+import {
+  LogOut,
+  Newspaper,
+  Archive,
+  Bookmark,
+  CheckCircle2,
+  Settings,
+  SlidersHorizontal,
+  PenSquare,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,6 +22,7 @@ const navItems = [
   { href: '/archive', label: 'Archive', icon: Archive },
   { href: '/saved', label: 'Saved', icon: Bookmark },
   { href: '/read', label: 'Read', icon: CheckCircle2 },
+  { href: '/compose', label: 'Compose', icon: PenSquare },
   { href: '/preferences', label: 'Preferences', icon: SlidersHorizontal },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

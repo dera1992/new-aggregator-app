@@ -23,10 +23,19 @@ async function handleResponse<T>(response: Response): Promise<T> {
   }
 
   if (!response.ok) {
-    const message =
-      typeof data === 'object' && data && 'message' in data
-        ? String((data as { message: string }).message)
-        : response.statusText;
+    let message = response.statusText;
+    if (typeof data === 'object' && data) {
+      if ('message' in data) {
+        message = String((data as { message: string }).message);
+      } else if ('errors' in data && Array.isArray((data as { errors: unknown }).errors)) {
+        const errors = (data as { errors: Array<{ msg?: string }> }).errors
+          .map((error) => error.msg)
+          .filter(Boolean);
+        if (errors.length) {
+          message = errors.join(' ');
+        }
+      }
+    }
 
     if (response.status === 401 || response.status === 403) {
       clearToken();
