@@ -10,6 +10,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(50), default="user", nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     is_email_confirmed = db.Column(db.Boolean, default=False)
     email_confirmed_at = db.Column(db.DateTime)
@@ -25,6 +26,19 @@ class User(db.Model):
 
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+
+
+class UserProfile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    full_name = db.Column(db.String(120))
+    timezone = db.Column(db.String(50), default="UTC")
+    avatar_url = db.Column(db.String(500))
+    subscription_tier = db.Column(db.String(50), default="free")
+    subscription_status = db.Column(db.String(50), default="inactive")
+    subscription_expires_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class Article(db.Model):
