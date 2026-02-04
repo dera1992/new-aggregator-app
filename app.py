@@ -4,6 +4,8 @@ from flask_cors import CORS
 from models.models import db
 from routes.news import news_bp
 from routes.auth import auth_bp
+from routes.admin import admin_bp
+from routes.profile import profile_bp
 from routes.preferences import preferences_bp
 
 def create_app():
@@ -24,6 +26,8 @@ def create_app():
     app.config["FRONTEND_URL"] = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(profile_bp)
     app.register_blueprint(news_bp)
     app.register_blueprint(preferences_bp)
 
