@@ -95,19 +95,23 @@ export default function FeedPage() {
     },
     {
       label: 'Tech',
-      onClick: () => applyQuickFilter({ category: 'tech' }),
+      onClick: () => applyQuickFilter({ category: 'Tech' }),
     },
     {
       label: 'Business',
-      onClick: () => applyQuickFilter({ category: 'business' }),
+      onClick: () => applyQuickFilter({ category: 'Business' }),
     },
     {
       label: 'Sports',
-      onClick: () => applyQuickFilter({ category: 'sports' }),
+      onClick: () => applyQuickFilter({ category: 'Sports' }),
     },
     {
       label: 'Politics',
-      onClick: () => applyQuickFilter({ category: 'politics' }),
+      onClick: () => applyQuickFilter({ category: 'Politics' }),
+    },
+    {
+      label: 'Lifestyle',
+      onClick: () => applyQuickFilter({ category: 'Lifestyle' }),
     },
     {
       label: 'Top Sources',
