@@ -101,10 +101,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Sheet>
                 <span className="text-lg font-semibold lg:hidden">News Aggregator</span>
                 <div className="min-w-0">
-                  <h1 className="truncate text-lg font-semibold">
+                  <h1 className="truncate text-base font-semibold lg:text-lg">
                     {navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}
                   </h1>
-                  <p className="truncate text-sm text-muted-foreground">
+                  <p className="hidden truncate text-sm text-muted-foreground lg:block">
                     Stay on top of the news in one place.
                   </p>
                 </div>
