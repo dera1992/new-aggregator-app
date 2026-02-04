@@ -6,10 +6,12 @@ from schemas.comment import CommentRequest
 from schemas.analysis import AnalysisRequest
 from schemas.joke import JokeRequest
 from schemas.viral_post import ViralPostRequest
+from schemas.paste import PasteTextRequest, SummaryRequest
 from services.comment_generator import generate_comment, CommentGenError
 from services.analysis_generator import generate_analysis, AnalysisGenError
 from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
+from services.summary_generator import generate_summary, SummaryGenError
 from utils.decorators import token_required
 
 # Define the Blueprint
@@ -306,6 +308,26 @@ def list_read_articles():
 @token_required
 def generate_viral_post_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "summary" not in payload and "text" in payload:
+        try:
+            paste_request = PasteTextRequest.model_validate(payload)
+        except ValidationError as exc:
+            return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+        try:
+            summary_result = generate_summary(
+                text=paste_request.text,
+                style="standard",
+                max_length=None,
+                fact_mode=paste_request.fact_mode,
+                model=paste_request.model,
+            )
+        except SummaryGenError as exc:
+            return jsonify({"message": str(exc)}), 502
+
+        payload = {**payload, "summary": summary_result["summary"]}
+        payload.pop("text", None)
+
     try:
         request_data = ViralPostRequest.model_validate(payload)
     except ValidationError as exc:
@@ -323,6 +345,26 @@ def generate_viral_post_endpoint():
 @token_required
 def generate_comment_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "summary" not in payload and "text" in payload:
+        try:
+            paste_request = PasteTextRequest.model_validate(payload)
+        except ValidationError as exc:
+            return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+        try:
+            summary_result = generate_summary(
+                text=paste_request.text,
+                style="standard",
+                max_length=None,
+                fact_mode=paste_request.fact_mode,
+                model=paste_request.model,
+            )
+        except SummaryGenError as exc:
+            return jsonify({"message": str(exc)}), 502
+
+        payload = {**payload, "summary": summary_result["summary"]}
+        payload.pop("text", None)
+
     try:
         request_data = CommentRequest.model_validate(payload)
     except ValidationError as exc:
@@ -340,6 +382,26 @@ def generate_comment_endpoint():
 @token_required
 def generate_joke_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "summary" not in payload and "text" in payload:
+        try:
+            paste_request = PasteTextRequest.model_validate(payload)
+        except ValidationError as exc:
+            return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+        try:
+            summary_result = generate_summary(
+                text=paste_request.text,
+                style="standard",
+                max_length=None,
+                fact_mode=paste_request.fact_mode,
+                model=paste_request.model,
+            )
+        except SummaryGenError as exc:
+            return jsonify({"message": str(exc)}), 502
+
+        payload = {**payload, "summary": summary_result["summary"]}
+        payload.pop("text", None)
+
     try:
         request_data = JokeRequest.model_validate(payload)
     except ValidationError as exc:
@@ -357,6 +419,26 @@ def generate_joke_endpoint():
 @token_required
 def generate_analysis_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "summary" not in payload and "text" in payload:
+        try:
+            paste_request = PasteTextRequest.model_validate(payload)
+        except ValidationError as exc:
+            return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+        try:
+            summary_result = generate_summary(
+                text=paste_request.text,
+                style="standard",
+                max_length=None,
+                fact_mode=paste_request.fact_mode,
+                model=paste_request.model,
+            )
+        except SummaryGenError as exc:
+            return jsonify({"message": str(exc)}), 502
+
+        payload = {**payload, "summary": summary_result["summary"]}
+        payload.pop("text", None)
+
     try:
         request_data = AnalysisRequest.model_validate(payload)
     except ValidationError as exc:
@@ -365,6 +447,23 @@ def generate_analysis_endpoint():
     try:
         result = generate_analysis(**request_data.model_dump())
     except AnalysisGenError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+    return jsonify(result)
+
+
+@news_bp.route("/api/news/generate-summary", methods=["POST"])
+@token_required
+def generate_summary_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = SummaryRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    try:
+        result = generate_summary(**request_data.model_dump())
+    except SummaryGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
     return jsonify(result)
