@@ -11,6 +11,7 @@ import {
   Settings,
   SlidersHorizontal,
   PenSquare,
+  Shield,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/compose', label: 'Compose', icon: PenSquare },
   { href: '/preferences', label: 'Preferences', icon: SlidersHorizontal },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/admin', label: 'Admin', icon: Shield },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
