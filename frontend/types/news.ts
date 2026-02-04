@@ -5,10 +5,12 @@ export type StorySource = {
 };
 
 export type Story = {
+  cluster_id: number;
   story_title: string;
   summary: string;
   sources: StorySource[];
   timestamp: string;
+  lead_article_id?: number;
 };
 
 export type FeedResponse = {
