@@ -16,9 +16,9 @@ export default function ReadPage() {
   });
 
   return (
-    <Card>
+    <Card className="w-full min-w-0">
       <CardHeader>
-        <CardTitle>Read Articles</CardTitle>
+        <CardTitle className="break-words">Read Articles</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {readQuery.isLoading && <LoadingState label="Loading read history" />}
@@ -31,14 +31,14 @@ export default function ReadPage() {
         {readQuery.data && readQuery.data.articles.length > 0 && (
           <div className="space-y-3">
             {readQuery.data.articles.map((article, index) => (
-              <div key={`${article.title}-${index}`} className="rounded-md border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
+              <div key={`${article.title}-${index}`} className="w-full min-w-0 rounded-md border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <a
                       href={article.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-semibold text-primary hover:underline"
+                      className="break-words font-semibold text-primary hover:underline"
                     >
                       {article.title}
                     </a>

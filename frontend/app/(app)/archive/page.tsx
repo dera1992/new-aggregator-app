@@ -34,27 +34,31 @@ export default function ArchivePage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Archive Filters</CardTitle>
+          <CardTitle className="break-words">Archive Filters</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-5">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Input
+            className="w-full"
             placeholder="Category"
             value={filters.category}
             onChange={(event) => updateFilter('category', event.target.value)}
           />
           <Input
+            className="w-full"
             placeholder="Source"
             value={filters.source}
             onChange={(event) => updateFilter('source', event.target.value)}
           />
           <Input
+            className="w-full"
             placeholder="Before (ISO)"
             value={filters.before}
             onChange={(event) => updateFilter('before', event.target.value)}
           />
           <Input
+            className="w-full"
             type="number"
             min={1}
             placeholder="Limit"
@@ -62,6 +66,7 @@ export default function ArchivePage() {
             onChange={(event) => updateFilter('limit', Number(event.target.value))}
           />
           <Input
+            className="w-full"
             type="number"
             min={0}
             placeholder="Offset"
@@ -71,9 +76,9 @@ export default function ArchivePage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Archived Articles</CardTitle>
+          <CardTitle className="break-words">Archived Articles</CardTitle>
         </CardHeader>
         <CardContent>
           {archiveQuery.isLoading && <LoadingState label="Loading archive" />}
@@ -99,7 +104,7 @@ export default function ArchivePage() {
                   <tbody>
                     {archiveQuery.data.articles.map((article, index) => (
                       <tr key={`${article.title}-${index}`} className="border-b">
-                        <td className="py-3 font-medium">
+                        <td className="py-3 font-medium break-words">
                           <a
                             href={article.url}
                             target="_blank"
