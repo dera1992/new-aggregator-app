@@ -8,6 +8,7 @@ import {
   Archive,
   Bookmark,
   CheckCircle2,
+  Menu,
   Settings,
   SlidersHorizontal,
   PenSquare,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -69,7 +71,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="border-b border-border bg-background px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <span className="text-lg font-semibold">News Aggregator</span>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="lg:hidden">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Open navigation</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-72 p-6">
+                    <div className="mb-6 text-lg font-semibold">News Aggregator</div>
+                    <nav className="flex flex-col gap-2">
+                      {navItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <SheetClose asChild key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={cn(
+                                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
+                                pathname === item.href
+                                  ? 'bg-accent text-accent-foreground'
+                                  : 'text-muted-foreground',
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                              {item.label}
+                            </Link>
+                          </SheetClose>
+                        );
+                      })}
+                    </nav>
+                  </SheetContent>
+                </Sheet>
+                <span className="text-lg font-semibold lg:hidden">News Aggregator</span>
                 <div>
                   <h1 className="text-lg font-semibold">
                     {navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}
