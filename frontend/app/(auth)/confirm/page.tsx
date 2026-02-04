@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { confirmAccount, resendConfirmation } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
@@ -19,6 +21,8 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ConfirmPage() {
+  const searchParams = useSearchParams();
+  const hasAutoSubmitted = useRef(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', token: '' },
@@ -36,12 +40,28 @@ export default function ConfirmPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  useEffect(() => {
+    const email = searchParams.get('email');
+    const token = searchParams.get('token');
+    if (!email || !token) {
+      return;
+    }
+
+    form.setValue('email', email);
+    form.setValue('token', token);
+
+    if (!hasAutoSubmitted.current) {
+      hasAutoSubmitted.current = true;
+      confirmMutation.mutate({ email, token });
+    }
+  }, [searchParams, form, confirmMutation]);
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">Confirm account</h1>
         <p className="text-sm text-muted-foreground">
-          Enter the confirmation token sent to your email.
+          Use the confirmation link in your email or enter the token below.
         </p>
       </div>
       <form

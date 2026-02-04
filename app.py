@@ -21,6 +21,7 @@ def create_app():
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_jwt_secret_key")
+    app.config["FRONTEND_URL"] = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(news_bp)
