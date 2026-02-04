@@ -53,6 +53,7 @@ const darkColors = {
 module.exports = {
   content: ['./App.{ts,tsx}', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
+  presets: [require('nativewind/preset')],
   theme: {
     extend: {
       colors: {
