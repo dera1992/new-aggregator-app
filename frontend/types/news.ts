@@ -5,10 +5,12 @@ export type StorySource = {
 };
 
 export type Story = {
+  cluster_id: number;
   story_title: string;
   summary: string;
   sources: StorySource[];
   timestamp: string;
+  lead_article_id?: number;
 };
 
 export type FeedResponse = {
@@ -85,21 +87,9 @@ export type CommentResponse = {
   comments: CommentVariant[];
 };
 
-export enum JokePlatform {
-  General = 'General',
-  Twitter = 'Twitter',
-  LinkedIn = 'LinkedIn',
-  Instagram = 'Instagram',
-  Reddit = 'Reddit',
-}
+export type JokePlatform = 'General' | 'Twitter' | 'LinkedIn' | 'Instagram' | 'Reddit';
 
-export enum JokeStyle {
-  Pun = 'pun',
-  OneLiner = 'one_liner',
-  Observational = 'observational',
-  SatireLight = 'satire_light',
-  DadJoke = 'dad_joke',
-}
+export type JokeStyle = 'pun' | 'one_liner' | 'observational' | 'satire_light' | 'dad_joke';
 
 export type GenerateJokeRequest = {
   summary: string;
