@@ -117,26 +117,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Button>
               </div>
             </div>
-            <nav className="mt-4 flex gap-2 overflow-x-auto pb-2 lg:hidden">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-2 whitespace-nowrap rounded-full border border-border px-3 py-1 text-sm font-medium',
-                      pathname === item.href
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-accent',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
           </header>
           <main className="flex-1 p-4 sm:p-6">{children}</main>
         </div>

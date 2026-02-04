@@ -1,7 +1,7 @@
 {
-  "/(app)/admin/page": "app/(app)/admin/page.js",
-  "/(app)/feed/page": "app/(app)/feed/page.js",
-  "/(app)/settings/page": "app/(app)/settings/page.js",
   "/(app)/compose/page": "app/(app)/compose/page.js",
-  "/(app)/archive/page": "app/(app)/archive/page.js"
+  "/(app)/archive/page": "app/(app)/archive/page.js",
+  "/(app)/feed/page": "app/(app)/feed/page.js",
+  "/(app)/admin/page": "app/(app)/admin/page.js",
+  "/(app)/saved/page": "app/(app)/saved/page.js"
 }
