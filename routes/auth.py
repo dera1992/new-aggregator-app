@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 import jwt
 from flask import Blueprint, request, jsonify, current_app, g
-from models.models import db, User
+from models.models import db, User, UserProfile
 from services.email_service import send_email
 from utils.auth import (
     generate_token,
@@ -68,6 +68,10 @@ def register():
     new_user.confirm_token_expires_at = token_expiry(hours=24)
 
     db.session.add(new_user)
+    db.session.commit()
+
+    profile = UserProfile(user_id=new_user.id)
+    db.session.add(profile)
     db.session.commit()
 
     confirmation_link = build_confirmation_link(email, confirm_token)
