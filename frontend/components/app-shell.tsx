@@ -25,6 +25,7 @@ const navItems = [
   { href: '/read', label: 'Read', icon: CheckCircle2 },
   { href: '/compose', label: 'Compose', icon: PenSquare },
   { href: '/preferences', label: 'Preferences', icon: SlidersHorizontal },
+  { href: '/profile', label: 'Profile', icon: User },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/admin', label: 'Admin', icon: Shield },
 ];
