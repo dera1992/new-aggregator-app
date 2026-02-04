@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Clipboard, Eraser, Rocket } from 'lucide-react';
 
+import type { JokePlatform, JokeStyle } from '@/types/news';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,8 +31,8 @@ export type AnalysisOptions = {
 };
 
 export type JokeOptions = {
-  platform: 'General' | 'Twitter' | 'LinkedIn' | 'Instagram' | 'Reddit';
-  style: 'pun' | 'one_liner' | 'observational' | 'satire_light' | 'dad_joke';
+  platform: JokePlatform;
+  style: JokeStyle;
   audience: string;
   maxVariants: number;
   factMode: boolean;
