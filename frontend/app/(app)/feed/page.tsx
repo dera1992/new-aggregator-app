@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
@@ -39,6 +39,50 @@ export default function FeedPage() {
   const updateFilter = (key: keyof FeedQuery, value: string | number) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
+
+  const feedStats = useMemo(() => {
+    const stories = feedQuery.data?.stories ?? [];
+    const sources = new Set(stories.flatMap((story) => story.sources.map((source) => source.name)));
+    const latestTimestamp = stories
+      .map((story) => story.timestamp)
+      .sort()
+      .at(-1);
+    return {
+      storyCount: stories.length,
+      sourceCount: sources.size,
+      lastUpdated: latestTimestamp ? new Date(latestTimestamp).toLocaleString() : '—',
+    };
+  }, [feedQuery.data?.stories]);
+
+  const applyQuickFilter = (next: Partial<FeedQuery>) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...next,
+      offset: 0,
+    }));
+  };
+
+  const quickFilters = [
+    {
+      label: 'Last 24 hours',
+      onClick: () => {
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        applyQuickFilter({ since });
+      },
+    },
+    {
+      label: 'Tech',
+      onClick: () => applyQuickFilter({ category: 'tech' }),
+    },
+    {
+      label: 'Business',
+      onClick: () => applyQuickFilter({ category: 'business' }),
+    },
+    {
+      label: 'Top Sources',
+      onClick: () => applyQuickFilter({ source: '' }),
+    },
+  ];
 
   const renderStories = (
     data: typeof feedQuery.data | typeof personalizedQuery.data,
@@ -102,6 +146,43 @@ export default function FeedPage() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Today&apos;s Top Stories</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Browse the latest clustered news summaries. Use filters to narrow by category, source, or time.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {quickFilters.map((filter) => (
+              <Button
+                key={filter.label}
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={filter.onClick}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-border bg-background p-3">
+              <p className="text-xs uppercase text-muted-foreground">Stories loaded</p>
+              <p className="text-lg font-semibold">{feedStats.storyCount}</p>
+            </div>
+            <div className="rounded-md border border-border bg-background p-3">
+              <p className="text-xs uppercase text-muted-foreground">Sources</p>
+              <p className="text-lg font-semibold">{feedStats.sourceCount}</p>
+            </div>
+            <div className="rounded-md border border-border bg-background p-3">
+              <p className="text-xs uppercase text-muted-foreground">Last updated</p>
+              <p className="text-sm font-medium">{feedStats.lastUpdated}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
