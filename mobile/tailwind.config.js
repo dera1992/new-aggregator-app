@@ -144,5 +144,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [require('nativewind/tailwindcss')],
 };
