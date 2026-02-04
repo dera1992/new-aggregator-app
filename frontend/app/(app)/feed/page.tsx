@@ -80,6 +80,13 @@ export default function FeedPage() {
                   </a>
                 ))}
               </div>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/story/${story.cluster_id}`}>
+                    Generate content
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
