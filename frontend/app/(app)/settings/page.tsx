@@ -19,6 +19,7 @@ import {
   loadGeneratorDefaults,
   saveGeneratorDefaults,
 } from '@/lib/utils/generator-defaults';
+import { useTheme } from '@/components/theme-provider';
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(6),
@@ -34,6 +35,7 @@ type ProfileFormValues = {
 };
 
 export default function SettingsPage() {
+  const { resolvedTheme, resetTheme } = useTheme();
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { currentPassword: '', newPassword: '' },
@@ -142,6 +144,18 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <div>Current theme: <span className="font-medium text-foreground">{resolvedTheme}</span></div>
+          <Button variant="outline" onClick={resetTheme}>
+            Reset to default
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

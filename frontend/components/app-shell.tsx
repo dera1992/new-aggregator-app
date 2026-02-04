@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/feed', label: 'Feed', icon: Newspaper },
@@ -39,9 +40,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 flex-col border-r border-border bg-background p-6 md:flex">
+        <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 md:flex">
           <div className="mb-6 text-lg font-semibold">News Aggregator</div>
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => {
@@ -53,7 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
                     pathname === item.href
-                      ? 'bg-accent text-foreground'
+                      ? 'bg-accent text-accent-foreground'
                       : 'text-muted-foreground',
                   )}
                 >
@@ -70,10 +71,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <h1 className="text-lg font-semibold">{navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}</h1>
               <p className="text-sm text-muted-foreground">Stay on top of the news in one place.</p>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </header>
           <main className="flex-1 p-6">{children}</main>
         </div>
