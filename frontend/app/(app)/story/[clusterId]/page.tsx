@@ -22,6 +22,7 @@ import { CopyButton } from '@/components/copy-button';
 import { JokeGenerator } from '@/components/JokeGenerator';
 import { AnalysisGenerator } from '@/components/AnalysisGenerator';
 import { loadGeneratorDefaults } from '@/lib/utils/generator-defaults';
+import { ShareActions } from '@/components/share-actions';
 
 const viralSchema = z.object({
   platform: z.enum(['Twitter', 'LinkedIn', 'Instagram']),
@@ -44,6 +45,19 @@ const commentSchema = z.object({
 });
 
 type CommentValues = z.infer<typeof commentSchema>;
+
+const buildViralCopy = (variant: {
+  hook: string;
+  body: string;
+  hashtags: string[];
+  thread?: string[];
+}) =>
+  `${variant.hook}\n\n${variant.body}` +
+  (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
+  `\n\n${variant.hashtags.join(' ')}`;
+
+const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
+  [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
 
 export default function StoryPage() {
   const params = useParams();
@@ -305,11 +319,11 @@ export default function StoryPage() {
                         <strong>Hashtags:</strong> {variant.hashtags.join(' ')}
                       </div>
                       <CopyButton
-                        value={
-                          `${variant.hook}\n\n${variant.body}` +
-                          (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
-                          `\n\n${variant.hashtags.join(' ')}`
-                        }
+                        value={buildViralCopy(variant)}
+                      />
+                      <ShareActions
+                        title={`Viral post variant ${index + 1}`}
+                        text={buildViralCopy(variant)}
                       />
                     </CardContent>
                   </Card>
@@ -420,7 +434,11 @@ export default function StoryPage() {
                     <CardContent className="space-y-2 text-sm">
                       <p>{comment.comment}</p>
                       <p className="text-muted-foreground">CTA: {comment.cta_question}</p>
-                      <CopyButton value={`${comment.comment}\n\n${comment.cta_question}`} />
+                      <CopyButton value={buildCommentCopy(comment)} />
+                      <ShareActions
+                        title={`Comment variant ${index + 1}`}
+                        text={buildCommentCopy(comment)}
+                      />
                     </CardContent>
                   </Card>
                 ))}

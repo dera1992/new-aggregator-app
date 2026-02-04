@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '@/components/copy-button';
+import { ShareActions } from '@/components/share-actions';
 import type { GenerateJokeResponse } from '@/types/news';
 
 const jokeSchema = z.object({
@@ -204,6 +205,10 @@ export function JokeGenerator({ summary }: JokeGeneratorProps) {
                     <CopyButton value={joke.punchline} />
                     <CopyButton value={joke.full_joke} />
                   </div>
+                  <ShareActions
+                    title={`Joke ${index + 1}`}
+                    text={joke.full_joke}
+                  />
                 </CardContent>
               </Card>
             ))}

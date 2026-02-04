@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 md:flex">
+        <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 lg:flex">
           <div className="mb-6 text-lg font-semibold">News Aggregator</div>
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => {
@@ -66,18 +66,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </aside>
         <div className="flex flex-1 flex-col">
-          <header className="flex items-center justify-between border-b border-border bg-background px-6 py-4">
-            <div>
-              <h1 className="text-lg font-semibold">{navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}</h1>
-              <p className="text-sm text-muted-foreground">Stay on top of the news in one place.</p>
+          <header className="border-b border-border bg-background px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="text-lg font-semibold">News Aggregator</span>
+                <div>
+                  <h1 className="text-lg font-semibold">
+                    {navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Stay on top of the news in one place.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-            </div>
+            <nav className="mt-4 flex gap-2 overflow-x-auto pb-2 lg:hidden">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-2 whitespace-nowrap rounded-full border border-border px-3 py-1 text-sm font-medium',
+                      pathname === item.href
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:bg-accent',
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </header>
           <main className="flex-1 p-6">{children}</main>
         </div>

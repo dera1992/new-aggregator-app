@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CopyButton } from '@/components/copy-button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ShareActions } from '@/components/share-actions';
 import type { CommentResponse, GenerateAnalysisResponse, GenerateJokeResponse, ViralPostResponse } from '@/types/news';
 import type { GenerateSummaryResponse } from '@/types/compose';
 
@@ -163,6 +164,10 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                     <p>Reading time: {variant.reading_time_seconds}s</p>
                   </div>
                   <CopyButton value={buildAnalysisCopy(variant)} />
+                  <ShareActions
+                    title={variant.title || `Analysis variant ${index + 1}`}
+                    text={buildAnalysisCopy(variant)}
+                  />
                 </div>
               ))}
 
@@ -175,6 +180,10 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                   </div>
                   <p className="text-sm text-muted-foreground">{joke.full_joke}</p>
                   <CopyButton value={joke.full_joke} />
+                  <ShareActions
+                    title={`Joke ${index + 1}`}
+                    text={joke.full_joke}
+                  />
                 </div>
               ))}
 
@@ -211,6 +220,10 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                       <CopyButton value={variant.thread.join('\n')} />
                     ) : null}
                   </div>
+                  <ShareActions
+                    title={`Viral post variant ${index + 1}`}
+                    text={buildViralCopy(variant)}
+                  />
                 </div>
               ))}
 
@@ -226,6 +239,10 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                     <p className="text-sm text-muted-foreground">CTA: {comment.cta_question}</p>
                   )}
                   <CopyButton value={buildCommentCopy(comment)} />
+                  <ShareActions
+                    title={`Comment ${index + 1}`}
+                    text={buildCommentCopy(comment)}
+                  />
                 </div>
               ))}
           </div>
