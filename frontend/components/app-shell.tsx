@@ -32,6 +32,12 @@ const navItems = [
   { href: '/admin', label: 'Admin', icon: Shield },
 ];
 
+const navLinkClassName = (isActive: boolean) =>
+  cn(
+    'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
+    isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+  );
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -53,12 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
-                    pathname === item.href
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground',
-                  )}
+                  className={navLinkClassName(pathname === item.href)}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -87,12 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           <SheetClose asChild key={item.href}>
                             <Link
                               href={item.href}
-                              className={cn(
-                                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent',
-                                pathname === item.href
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'text-muted-foreground',
-                              )}
+                              className={navLinkClassName(pathname === item.href)}
                             >
                               <Icon className="h-4 w-4" />
                               {item.label}
