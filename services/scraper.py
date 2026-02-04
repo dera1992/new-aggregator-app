@@ -12,6 +12,7 @@ RSS_FEEDS = {
     "World": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
     "Politics": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
     "Sports": "https://www.espn.com/espn/rss/news",
+    "Lifestyle": "https://www.reuters.com/lifestyle/",
 }
 
 # Only attempt full-page scraping for these domains
@@ -20,6 +21,8 @@ SCRAPE_ALLOWED_DOMAINS = {
     "www.espn.com",
     "reutersagency.com",
     "www.reutersagency.com",
+    "reuters.com",
+    "www.reuters.com",
 }
 
 HEADERS = {
