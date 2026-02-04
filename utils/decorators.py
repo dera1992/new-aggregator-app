@@ -23,3 +23,17 @@ def token_required(f):
             return jsonify({'message': 'Token is invalid!'}), 401
         return f(*args, **kwargs)
     return decorated
+
+
+def role_required(allowed_roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            user = getattr(g, "current_user", None)
+            if not user:
+                return jsonify({'message': 'User is missing'}), 401
+            if user.role not in set(allowed_roles):
+                return jsonify({'message': 'User lacks required role'}), 403
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
