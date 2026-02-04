@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
 import { changePassword } from '@/lib/api/auth';
+import { fetchProfile, updateProfile } from '@/lib/api/profile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,17 +20,31 @@ import {
   saveGeneratorDefaults,
 } from '@/lib/utils/generator-defaults';
 
-const schema = z.object({
+const passwordSchema = z.object({
   currentPassword: z.string().min(6),
   newPassword: z.string().min(6),
 });
 
-type FormValues = z.infer<typeof schema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
+
+type ProfileFormValues = {
+  full_name: string;
+  timezone: string;
+  avatar_url: string;
+};
 
 export default function SettingsPage() {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordSchema),
     defaultValues: { currentPassword: '', newPassword: '' },
+  });
+
+  const profileForm = useForm<ProfileFormValues>({
+    defaultValues: {
+      full_name: '',
+      timezone: '',
+      avatar_url: '',
+    },
   });
 
   const [defaults, setDefaults] = useState<GeneratorDefaults>(loadGeneratorDefaults());
@@ -38,12 +53,40 @@ export default function SettingsPage() {
     setDefaults(loadGeneratorDefaults());
   }, []);
 
-  const mutation = useMutation({
-    mutationFn: (values: FormValues) =>
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: fetchProfile,
+  });
+
+  useEffect(() => {
+    if (profile) {
+      profileForm.reset({
+        full_name: profile.full_name ?? '',
+        timezone: profile.timezone ?? '',
+        avatar_url: profile.avatar_url ?? '',
+      });
+    }
+  }, [profile, profileForm]);
+
+  const passwordMutation = useMutation({
+    mutationFn: (values: PasswordFormValues) =>
       changePassword(values.currentPassword, values.newPassword),
     onSuccess: () => {
       toast.success('Password changed');
-      form.reset();
+      passwordForm.reset();
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const profileMutation = useMutation({
+    mutationFn: (values: ProfileFormValues) =>
+      updateProfile({
+        full_name: values.full_name || undefined,
+        timezone: values.timezone || undefined,
+        avatar_url: values.avatar_url || undefined,
+      }),
+    onSuccess: () => {
+      toast.success('Profile updated');
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -57,11 +100,56 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
+          <CardTitle>Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isProfileLoading ? (
+            <div className="text-sm text-muted-foreground">Loading profile...</div>
+          ) : (
+            <form
+              onSubmit={profileForm.handleSubmit((values) => profileMutation.mutate(values))}
+              className="space-y-4"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full name</Label>
+                <Input id="full_name" {...profileForm.register('full_name')} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Input id="timezone" {...profileForm.register('timezone')} placeholder="UTC" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="avatar_url">Avatar URL</Label>
+                <Input id="avatar_url" {...profileForm.register('avatar_url')} />
+              </div>
+              <Button type="submit" disabled={profileMutation.isPending}>
+                {profileMutation.isPending ? 'Saving...' : 'Save profile'}
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+
+      {profile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <div>Tier: {profile.subscription_tier ?? 'N/A'}</div>
+            <div>Status: {profile.subscription_status ?? 'N/A'}</div>
+            <div>Expires: {profile.subscription_expires_at ?? 'N/A'}</div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
           <CardTitle>Change password</CardTitle>
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+            onSubmit={passwordForm.handleSubmit((values) => passwordMutation.mutate(values))}
             className="space-y-4"
           >
             <div className="space-y-2">
@@ -69,25 +157,29 @@ export default function SettingsPage() {
               <Input
                 id="currentPassword"
                 type="password"
-                {...form.register('currentPassword')}
+                {...passwordForm.register('currentPassword')}
               />
-              {form.formState.errors.currentPassword && (
+              {passwordForm.formState.errors.currentPassword && (
                 <p className="text-xs text-destructive">
-                  {form.formState.errors.currentPassword.message}
+                  {passwordForm.formState.errors.currentPassword.message}
                 </p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">New password</Label>
-              <Input id="newPassword" type="password" {...form.register('newPassword')} />
-              {form.formState.errors.newPassword && (
+              <Input
+                id="newPassword"
+                type="password"
+                {...passwordForm.register('newPassword')}
+              />
+              {passwordForm.formState.errors.newPassword && (
                 <p className="text-xs text-destructive">
-                  {form.formState.errors.newPassword.message}
+                  {passwordForm.formState.errors.newPassword.message}
                 </p>
               )}
             </div>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Updating...' : 'Update password'}
+            <Button type="submit" disabled={passwordMutation.isPending}>
+              {passwordMutation.isPending ? 'Updating...' : 'Update password'}
             </Button>
           </form>
         </CardContent>
