@@ -1,4 +1,4 @@
-import type { GenerateAnalysisRequest, GenerateJokeRequest } from '@/types/news';
+import type { GenerateAnalysisRequest, GenerateJokeRequest, JokePlatform, JokeStyle } from '@/types/news';
 
 export type SummaryStyle = 'short' | 'standard' | 'detailed';
 
@@ -42,3 +42,6 @@ export type GenerateCommentFromTextRequest = {
   max_variants: number;
   fact_mode: boolean;
 };
+
+export type ComposeJokePlatform = JokePlatform;
+export type ComposeJokeStyle = JokeStyle;
