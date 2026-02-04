@@ -15,3 +15,11 @@ venv
 build
 *.egg-info
 *.sqlite3
+
+# --- Frontend ---
+frontend/node_modules/
+frontend/.pnpm-store/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/.cache/
