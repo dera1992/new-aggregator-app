@@ -137,15 +137,15 @@ export default function FeedPage() {
     return (
       <div className="space-y-4">
         {data.stories.map((story, index) => (
-          <Card key={`${story.story_title}-${index}`}>
+          <Card key={`${story.story_title}-${index}`} className="w-full min-w-0">
             <CardHeader>
-              <CardTitle>{story.story_title}</CardTitle>
+              <CardTitle className="break-words">{story.story_title}</CardTitle>
               <p className="text-sm text-muted-foreground">
                 {new Date(story.timestamp).toLocaleString()}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{story.summary}</p>
+              <p className="break-words text-sm text-muted-foreground">{story.summary}</p>
               <div className="flex flex-wrap gap-2">
                 {story.sources.map((source) => (
                   <a
@@ -181,9 +181,9 @@ export default function FeedPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Today&apos;s Top Stories</CardTitle>
+          <CardTitle className="break-words">Today&apos;s Top Stories</CardTitle>
           <p className="text-sm text-muted-foreground">
             Browse the latest clustered news summaries. Use filters to narrow by category, source, or time.
           </p>
@@ -220,27 +220,31 @@ export default function FeedPage() {
           ) : null}
         </CardContent>
       </Card>
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle className="break-words">Filters</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-5">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Input
+            className="w-full"
             placeholder="Category"
             value={filters.category}
             onChange={(event) => updateFilter('category', event.target.value)}
           />
           <Input
+            className="w-full"
             placeholder="Source"
             value={filters.source}
             onChange={(event) => updateFilter('source', event.target.value)}
           />
           <Input
+            className="w-full"
             placeholder="Since (ISO)"
             value={filters.since}
             onChange={(event) => updateFilter('since', event.target.value)}
           />
           <Input
+            className="w-full"
             type="number"
             min={1}
             placeholder="Limit"
@@ -248,6 +252,7 @@ export default function FeedPage() {
             onChange={(event) => updateFilter('limit', Number(event.target.value))}
           />
           <Input
+            className="w-full"
             type="number"
             min={0}
             placeholder="Offset"

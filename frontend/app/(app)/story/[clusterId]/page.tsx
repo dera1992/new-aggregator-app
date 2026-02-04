@@ -158,13 +158,13 @@ export default function StoryPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle>{storyQuery.data.story_title}</CardTitle>
+          <CardTitle className="break-words">{storyQuery.data.story_title}</CardTitle>
           <p className="text-sm text-muted-foreground">Cluster {storyQuery.data.cluster_id}</p>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">{storyQuery.data.summary}</p>
+          <p className="break-words text-sm text-muted-foreground">{storyQuery.data.summary}</p>
           <div className="space-y-2">
             {storyQuery.data.sources.map((source) => (
               <div key={source.url} className="text-sm">
@@ -184,7 +184,7 @@ export default function StoryPage() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Viral Post Generator</CardTitle>
           </CardHeader>
@@ -292,7 +292,7 @@ export default function StoryPage() {
             {viralMutation.data && (
               <div className="space-y-4">
                 {viralMutation.data.variants.map((variant, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="w-full min-w-0">
                     <CardHeader>
                       <CardTitle className="text-base">
                         Variant {index + 1}
@@ -333,7 +333,7 @@ export default function StoryPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
             <CardTitle>Comment Generator</CardTitle>
           </CardHeader>
@@ -425,7 +425,7 @@ export default function StoryPage() {
             {commentMutation.data && (
               <div className="space-y-4">
                 {commentMutation.data.comments.map((comment, index) => (
-                  <Card key={index}>
+                  <Card key={index} className="w-full min-w-0">
                     <CardHeader>
                       <CardTitle className="text-base">
                         Variant {index + 1} · {comment.tone}

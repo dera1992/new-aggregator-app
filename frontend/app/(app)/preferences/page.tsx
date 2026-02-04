@@ -68,9 +68,9 @@ export default function PreferencesPage() {
   };
 
   return (
-    <Card>
+    <Card className="w-full min-w-0">
       <CardHeader>
-        <CardTitle>Preferences</CardTitle>
+        <CardTitle className="break-words">Preferences</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {preferencesQuery.isLoading && <LoadingState label="Loading preferences" />}
