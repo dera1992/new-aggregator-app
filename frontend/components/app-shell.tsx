@@ -42,8 +42,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex min-h-screen">
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      <div className="flex min-h-screen min-w-0">
         <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 lg:flex">
           <div className="mb-6 text-lg font-semibold">News Aggregator</div>
           <nav className="flex flex-col gap-2">
@@ -67,10 +67,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </aside>
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <header className="border-b border-border bg-background px-6 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-4">
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="lg:hidden">
@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <span className="sr-only">Open navigation</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-72 p-6">
+                  <SheetContent side="left" className="w-[280px] max-w-[85vw] p-6">
                     <div className="mb-6 text-lg font-semibold">News Aggregator</div>
                     <nav className="flex flex-col gap-2">
                       {navItems.map((item) => {
@@ -104,11 +104,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </SheetContent>
                 </Sheet>
                 <span className="text-lg font-semibold lg:hidden">News Aggregator</span>
-                <div>
-                  <h1 className="text-lg font-semibold">
+                <div className="min-w-0">
+                  <h1 className="truncate text-lg font-semibold">
                     {navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="truncate text-sm text-muted-foreground">
                     Stay on top of the news in one place.
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </div>
