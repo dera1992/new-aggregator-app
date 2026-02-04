@@ -14,6 +14,7 @@ import { ErrorState } from '@/components/error-state';
 import { EmptyState } from '@/components/empty-state';
 import { PaginationControls } from '@/components/pagination-controls';
 import { Badge } from '@/components/ui/badge';
+import { getToken } from '@/lib/auth/token';
 
 const defaultFilters: FeedQuery = {
   category: '',
@@ -25,6 +26,7 @@ const defaultFilters: FeedQuery = {
 
 export default function FeedPage() {
   const [filters, setFilters] = useState<FeedQuery>(defaultFilters);
+  const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
   const feedQuery = useQuery({
     queryKey: ['feed', filters],
@@ -39,6 +41,27 @@ export default function FeedPage() {
   const updateFilter = (key: keyof FeedQuery, value: string | number) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
+
+  const isAdmin = useMemo(() => {
+    if (!adminUserId) {
+      return false;
+    }
+    const token = getToken();
+    if (!token) {
+      return false;
+    }
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) {
+        return false;
+      }
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      const userId = typeof decoded.user_id === 'number' ? decoded.user_id : null;
+      return userId !== null && String(userId) === String(adminUserId);
+    } catch {
+      return false;
+    }
+  }, [adminUserId]);
 
   const feedStats = useMemo(() => {
     const stories = feedQuery.data?.stories ?? [];
@@ -77,6 +100,14 @@ export default function FeedPage() {
     {
       label: 'Business',
       onClick: () => applyQuickFilter({ category: 'business' }),
+    },
+    {
+      label: 'Sports',
+      onClick: () => applyQuickFilter({ category: 'sports' }),
+    },
+    {
+      label: 'Politics',
+      onClick: () => applyQuickFilter({ category: 'politics' }),
     },
     {
       label: 'Top Sources',
@@ -167,20 +198,22 @@ export default function FeedPage() {
               </Button>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-border bg-background p-3">
-              <p className="text-xs uppercase text-muted-foreground">Stories loaded</p>
-              <p className="text-lg font-semibold">{feedStats.storyCount}</p>
+          {isAdmin ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-md border border-border bg-background p-3">
+                <p className="text-xs uppercase text-muted-foreground">Stories loaded</p>
+                <p className="text-lg font-semibold">{feedStats.storyCount}</p>
+              </div>
+              <div className="rounded-md border border-border bg-background p-3">
+                <p className="text-xs uppercase text-muted-foreground">Sources</p>
+                <p className="text-lg font-semibold">{feedStats.sourceCount}</p>
+              </div>
+              <div className="rounded-md border border-border bg-background p-3">
+                <p className="text-xs uppercase text-muted-foreground">Last updated</p>
+                <p className="text-sm font-medium">{feedStats.lastUpdated}</p>
+              </div>
             </div>
-            <div className="rounded-md border border-border bg-background p-3">
-              <p className="text-xs uppercase text-muted-foreground">Sources</p>
-              <p className="text-lg font-semibold">{feedStats.sourceCount}</p>
-            </div>
-            <div className="rounded-md border border-border bg-background p-3">
-              <p className="text-xs uppercase text-muted-foreground">Last updated</p>
-              <p className="text-sm font-medium">{feedStats.lastUpdated}</p>
-            </div>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
       <Card>
