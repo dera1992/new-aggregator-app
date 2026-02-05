@@ -23,6 +23,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function MainTabs() {
   return (
     <Tab.Navigator
+      initialRouteName="Feed"
       screenOptions={({ route }) => ({
         headerShown: true,
         tabBarStyle: { height: 60 },

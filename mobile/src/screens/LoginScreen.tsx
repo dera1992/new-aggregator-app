@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AuthLayout } from '@/components/AuthLayout';
@@ -15,6 +15,7 @@ import { useTheme } from '@/lib/theme/ThemeProvider';
 import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import type { FieldErrors } from 'react-hook-form';
 
 const schema = z.object({
@@ -25,12 +26,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
+type LoginRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<LoginRouteProp>();
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
@@ -58,18 +61,11 @@ export function LoginScreen() {
       password: values.password,
     };
 
-    // eslint-disable-next-line no-console
-    console.log('[auth][login] submit pressed payload:', {
-      email: requestPayload.email,
-      passwordLength: requestPayload.password.length,
-      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
-    });
-
     try {
       const data = await login(requestPayload);
       await signIn(data.token);
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || 'Login failed. Please check your credentials and try again.');
     }
   };
 
@@ -97,13 +93,12 @@ export function LoginScreen() {
           editable={!isSubmitting}
         />
       </View>
+      {route.params?.message ? <Text style={[styles.infoText, { color: theme.colors.primary }]}>{route.params.message}</Text> : null}
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit, onInvalid)} />
       {isSubmitting ? (
-        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
-          {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
-        </Text>
+        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}> {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}</Text>
       ) : null}
       <View style={styles.secondaryActions}>
         <Button label="Create account" variant="secondary" disabled={isSubmitting} onPress={() => navigation.navigate('Register')} />
@@ -129,5 +124,9 @@ const styles = StyleSheet.create({
   submittingHint: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

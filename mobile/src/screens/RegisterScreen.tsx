@@ -56,18 +56,15 @@ export function RegisterScreen() {
       password: values.password,
     };
 
-    // eslint-disable-next-line no-console
-    console.log('[auth][register] submit pressed payload:', {
-      email: requestPayload.email,
-      passwordLength: requestPayload.password.length,
-      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
-    });
-
     try {
-      await register(requestPayload);
-      navigation.navigate('Login');
+      const response = await register(requestPayload);
+      navigation.replace('Login', {
+        message:
+          response.message ||
+          'Account created successfully. Please confirm your email before logging in.',
+      });
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || 'Registration failed. Please try again.');
     }
   };
 
