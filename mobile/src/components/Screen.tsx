@@ -1,27 +1,40 @@
 import React from 'react';
-import { RefreshControl, SafeAreaView, ScrollView, View } from 'react-native';
+import { RefreshControl, SafeAreaView, ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
+
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 
 export function Screen({
   children,
   scroll = true,
-  className,
+  style,
   refreshing,
   onRefresh,
 }: {
   children: React.ReactNode;
   scroll?: boolean;
   className?: string;
+  style?: ViewStyle;
   refreshing?: boolean;
   onRefresh?: () => void;
 }) {
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
+
   if (scroll) {
     return (
-      <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
         <ScrollView
-          contentContainerClassName={`px-4 py-6 ${className ?? ''}`}
+          contentContainerStyle={[styles.content, style]}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            onRefresh ? <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} /> : undefined
+            onRefresh ? (
+              <RefreshControl
+                refreshing={Boolean(refreshing)}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.primary}
+              />
+            ) : undefined
           }
         >
           {children}
@@ -31,8 +44,19 @@ export function Screen({
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background dark:bg-dark-background">
-      <View className={`flex-1 px-4 py-6 ${className ?? ''}`}>{children}</View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.content, style]}>{children}</View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+});

@@ -1,22 +1,24 @@
-import React, { useState } from 'react';
-import { Text, View } from 'react-native';
-import { useForm } from 'react-hook-form';
+import React, { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AuthLayout } from '@/components/AuthLayout';
 import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
 import { ErrorState } from '@/components/ErrorState';
+import { Input } from '@/components/Input';
 import { login } from '@/lib/api/auth';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email('Enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -27,10 +29,22 @@ export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const [error, setError] = useState('');
-  const { handleSubmit, setValue, watch } = useForm<FormValues>({
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '' },
   });
+
+  const validationError = useMemo(
+    () => errors.email?.message ?? errors.password?.message ?? '',
+    [errors.email?.message, errors.password?.message],
+  );
 
   const onSubmit = async (values: FormValues) => {
     setError('');
@@ -44,31 +58,50 @@ export function LoginScreen() {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to access your personalized news feed.">
-      <View className="gap-3">
-        <Input
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={watch('email')}
-          onChangeText={(value) => setValue('email', value)}
+      <View style={styles.formGroup}>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, value } }) => (
+            <Input
+              placeholder="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
         />
-        <Input
-          placeholder="Password"
-          secureTextEntry
-          value={watch('password')}
-          onChangeText={(value) => setValue('password', value)}
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, value } }) => (
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+          )}
         />
       </View>
+      {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      <Button label="Login" onPress={handleSubmit(onSubmit)} />
-      <View className="gap-3">
+      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
+      <View style={styles.secondaryActions}>
         <Button label="Create account" variant="secondary" onPress={() => navigation.navigate('Register')} />
         <Button label="Forgot password" variant="ghost" onPress={() => navigation.navigate('ForgotPassword')} />
-        <Button label="Confirm email" variant="ghost" onPress={() => navigation.navigate('ConfirmEmail')} />
       </View>
-      <Text className="text-xs text-muted-foreground dark:text-dark-muted-foreground">
-        By continuing you agree to the News Aggregator terms.
-      </Text>
+      <Text style={[styles.legalText, { color: theme.colors.textMuted }]}>By continuing you agree to the News Aggregator terms.</Text>
     </AuthLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  formGroup: {
+    gap: 12,
+  },
+  secondaryActions: {
+    gap: 10,
+  },
+  legalText: {
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+});
