@@ -1,5 +1,8 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 
 export type SegmentOption = {
   value: string;
@@ -15,22 +18,26 @@ export function SegmentedControl({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
+
   return (
-    <View className="flex-row rounded-lg border border-border bg-secondary p-1 dark:border-dark-border dark:bg-dark-secondary">
+    <View style={[styles.container, { borderColor: theme.colors.border, backgroundColor: theme.colors.surfaceSubtle }]}>
       {options.map((option) => {
         const active = value === option.value;
         return (
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
-            className={`flex-1 rounded-md px-3 py-2 ${active ? 'bg-card dark:bg-dark-card' : ''}`}
+            style={[styles.option, active && { backgroundColor: theme.colors.surface }]}
           >
             <Text
-              className={`text-center text-xs font-semibold ${
-                active
-                  ? 'text-foreground dark:text-dark-foreground'
-                  : 'text-muted-foreground dark:text-dark-muted-foreground'
-              }`}
+              style={[
+                styles.label,
+                {
+                  color: active ? theme.colors.textPrimary : theme.colors.textMuted,
+                },
+              ]}
             >
               {option.label}
             </Text>
@@ -40,3 +47,24 @@ export function SegmentedControl({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 4,
+  },
+  option: {
+    flex: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  label: {
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+});
