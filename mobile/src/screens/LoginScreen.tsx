@@ -21,6 +21,8 @@ const schema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+type FormValues = z.infer<typeof schema>;
+
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -28,8 +30,6 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
@@ -51,20 +51,14 @@ export function LoginScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
-      return;
-    }
-
-    setIsSubmitting(true);
     try {
-      const data = await login(parsed.data);
+      const data = await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
       await signIn(data.token);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -81,6 +75,7 @@ export function LoginScreen() {
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
+              editable={!isSubmitting}
             />
           )}
         />
@@ -88,10 +83,9 @@ export function LoginScreen() {
           control={control}
           name="password"
           render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
           )}
         />
-        <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
@@ -102,8 +96,8 @@ export function LoginScreen() {
         </Text>
       ) : null}
       <View style={styles.secondaryActions}>
-        <Button label="Create account" variant="secondary" onPress={() => navigation.navigate('Register')} />
-        <Button label="Forgot password" variant="ghost" onPress={() => navigation.navigate('ForgotPassword')} />
+        <Button label="Create account" variant="secondary" disabled={isSubmitting} onPress={() => navigation.navigate('Register')} />
+        <Button label="Forgot password" variant="ghost" disabled={isSubmitting} onPress={() => navigation.navigate('ForgotPassword')} />
       </View>
       <Text style={[styles.legalText, { color: theme.colors.textMuted }]}>By continuing you agree to the News Aggregator terms.</Text>
     </AuthLayout>
