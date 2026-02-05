@@ -65,6 +65,7 @@ export function LoginScreen() {
         />
         <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
+      {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={onSubmit} />
       {isSubmitting ? (
