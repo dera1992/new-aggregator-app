@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet as RNStyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { z } from 'zod';
 
@@ -82,7 +82,7 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = RNStyleSheet.create({
   formGroup: {
     gap: 12,
   },
