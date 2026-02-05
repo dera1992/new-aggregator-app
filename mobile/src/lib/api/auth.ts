@@ -6,7 +6,7 @@ export async function login(payload: { email: string; password: string }) {
   return data;
 }
 
-export async function register(payload: { name: string; email: string; password: string }) {
+export async function register(payload: { email: string; password: string; name?: string }) {
   const { data } = await apiClient.post<MessageResponse>('/api/auth/register', payload);
   return data;
 }
