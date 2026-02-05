@@ -5,6 +5,7 @@ import { navigate } from '@/navigation/root-navigation';
 import type { ErrorResponse } from '@/types/user';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+const REQUEST_TIMEOUT_MS = 12000;
 
 if (!apiUrl) {
   // eslint-disable-next-line no-console
@@ -13,6 +14,7 @@ if (!apiUrl) {
 
 export const apiClient = axios.create({
   baseURL: apiUrl,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -30,15 +32,25 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
-    if (status === 401 || status === 403) {
+    const requestUrl = String(error?.config?.url ?? '');
+    const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
+
+    if ((status === 401 || status === 403) && !isAuthEndpoint) {
       await clearToken();
       navigate('Auth');
     }
-    return Promise.reject(normalizeError(error?.response?.data));
+
+    return Promise.reject(normalizeError(error));
   },
 );
 
-function normalizeError(data: ErrorResponse | undefined) {
+function normalizeError(error: any) {
+  const data = error?.response?.data as ErrorResponse | undefined;
+  const message = buildFriendlyNetworkError(error);
+  if (message) {
+    return new Error(message);
+  }
+
   if (!data) {
     return new Error('Something went wrong.');
   }
@@ -46,8 +58,30 @@ function normalizeError(data: ErrorResponse | undefined) {
     return new Error(data.message);
   }
   if (data.errors) {
-    const message = Object.values(data.errors).flat().join(', ');
-    return new Error(message || 'Something went wrong.');
+    const mergedMessage = Object.values(data.errors).flat().join(', ');
+    return new Error(mergedMessage || 'Something went wrong.');
   }
   return new Error('Something went wrong.');
+}
+
+function buildFriendlyNetworkError(error: any) {
+  const code = error?.code;
+  const hasResponse = Boolean(error?.response);
+  if (hasResponse) {
+    return null;
+  }
+
+  if (code === 'ECONNABORTED') {
+    return `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Verify backend URL, phone/computer network, and Flask server availability.`;
+  }
+
+  if (code !== 'ERR_NETWORK') {
+    return null;
+  }
+
+  if (apiUrl?.includes('localhost') || apiUrl?.includes('127.0.0.1')) {
+    return 'Cannot reach API from Expo Go. On a physical phone, use your computer LAN IP (example: http://192.168.x.x:8080) instead of localhost.';
+  }
+
+  return 'Cannot reach API. Check that your backend is running and EXPO_PUBLIC_API_URL points to a reachable address.';
 }

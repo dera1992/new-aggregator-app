@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,7 +41,7 @@ export function ForgotPasswordScreen() {
 
   return (
     <AuthLayout title="Reset password" subtitle="We'll email you a reset link and token.">
-      <View className="gap-3">
+      <View style={styles.formGroup}>
         <Input
           placeholder="Email"
           autoCapitalize="none"
@@ -56,3 +56,10 @@ export function ForgotPasswordScreen() {
     </AuthLayout>
   );
 }
+
+
+const styles = StyleSheet.create({
+  formGroup: {
+    gap: 12,
+  },
+});

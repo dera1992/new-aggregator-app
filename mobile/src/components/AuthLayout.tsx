@@ -1,17 +1,54 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
 import { Screen } from './Screen';
+import { Card } from './Card';
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
+
   return (
-    <Screen scroll>
-      <View className="gap-6">
-        <View className="gap-2">
-          <Text className="text-2xl font-semibold text-foreground dark:text-dark-foreground">{title}</Text>
-          <Text className="text-sm text-muted-foreground dark:text-dark-muted-foreground">{subtitle}</Text>
-        </View>
-        <View className="gap-4">{children}</View>
+    <Screen scroll={false} style={styles.screenContent}>
+      <View style={styles.wrapper}>
+        <Card style={styles.card}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{title}</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{subtitle}</Text>
+          </View>
+          <View style={styles.body}>{children}</View>
+        </Card>
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  screenContent: {
+    justifyContent: 'center',
+  },
+  wrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    gap: 20,
+  },
+  header: {
+    gap: 8,
+  },
+  body: {
+    gap: 14,
+  },
+  title: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+});

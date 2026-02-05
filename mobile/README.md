@@ -15,7 +15,9 @@ cp ../.env.example .env
 npm install
 ```
 
-Set `EXPO_PUBLIC_API_URL` in `.env` to your Flask backend (e.g. `http://localhost:5000`).
+Set `EXPO_PUBLIC_API_URL` in `.env` to your Flask backend (e.g. `http://localhost:8080`).
+
+If you test with **Expo Go on a physical phone**, do **not** use `localhost`; use your computer LAN IP instead (for example `http://192.168.1.10:8080`).
 
 ## Run
 
