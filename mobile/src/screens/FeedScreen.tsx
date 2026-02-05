@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -18,7 +19,8 @@ import { StoryCard } from '@/components/StoryCard';
 import { fetchFeed, fetchPersonalizedFeed, type FeedQuery } from '@/lib/api/news';
 import type { RootStackParamList } from '@/navigation/root-navigation';
 import type { MainTabParamList } from '@/navigation/MainTabs';
-import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 
 const defaultFilters: FeedQuery = {
   category: '',
@@ -38,6 +40,8 @@ export function FeedScreen() {
   const [segment, setSegment] = useState<'clustered' | 'personalized'>('clustered');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const navigation = useNavigation<NavigationProp>();
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
 
   const feedQuery = useQuery({
     queryKey: ['feed', filters],
@@ -91,46 +95,45 @@ export function FeedScreen() {
         }
       }}
     >
-      <View className="gap-6">
-        <Card className="gap-4">
-          <View className="gap-2">
-            <Text className="text-lg font-semibold text-foreground dark:text-dark-foreground">Today&apos;s Top Stories</Text>
-            <Text className="text-sm text-muted-foreground dark:text-dark-muted-foreground">
-              Browse the latest clustered news summaries. Use filters to narrow by category, source, or time.
+      <View style={styles.container}>
+        <Card>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Today&apos;s Top Stories</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Browse clustered summaries and tune your feed using quick filters.
             </Text>
           </View>
-          <View className="flex-row flex-wrap gap-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickFilters}>
             {quickFilters.map((filter) => (
               <Button key={filter.label} label={filter.label} variant="secondary" onPress={filter.onPress} />
             ))}
-          </View>
-          <View className="flex-row flex-wrap gap-3">
-            <View className="rounded-md border border-border bg-background px-3 py-2 dark:border-dark-border dark:bg-dark-background">
-              <Text className="text-[10px] uppercase text-muted-foreground dark:text-dark-muted-foreground">Stories loaded</Text>
-              <Text className="text-base font-semibold text-foreground dark:text-dark-foreground">{stats.storyCount}</Text>
+          </ScrollView>
+          <View style={styles.statsGrid}>
+            <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+              <Ionicons name="newspaper-outline" size={16} color={theme.colors.primary} />
+              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Stories</Text>
+              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.storyCount}</Text>
             </View>
-            <View className="rounded-md border border-border bg-background px-3 py-2 dark:border-dark-border dark:bg-dark-background">
-              <Text className="text-[10px] uppercase text-muted-foreground dark:text-dark-muted-foreground">Sources</Text>
-              <Text className="text-base font-semibold text-foreground dark:text-dark-foreground">{stats.sourceCount}</Text>
+            <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+              <Ionicons name="globe-outline" size={16} color={theme.colors.primary} />
+              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Sources</Text>
+              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.sourceCount}</Text>
             </View>
-            <View className="rounded-md border border-border bg-background px-3 py-2 dark:border-dark-border dark:bg-dark-background">
-              <Text className="text-[10px] uppercase text-muted-foreground dark:text-dark-muted-foreground">Last updated</Text>
-              <Text className="text-xs font-medium text-foreground dark:text-dark-foreground">{stats.lastUpdated}</Text>
+            <View style={[styles.statCardWide, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+              <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
+              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Last updated</Text>
+              <Text style={[styles.statTime, { color: theme.colors.textPrimary }]}>{stats.lastUpdated}</Text>
             </View>
           </View>
         </Card>
 
-        <Card className="gap-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-semibold text-foreground dark:text-dark-foreground">Filters</Text>
-            <Button
-              label={filtersOpen ? 'Hide' : 'Show'}
-              variant="ghost"
-              onPress={() => setFiltersOpen((prev) => !prev)}
-            />
+        <Card>
+          <View style={styles.filtersHeader}>
+            <Text style={[styles.filtersTitle, { color: theme.colors.textPrimary }]}>Filters</Text>
+            <Button label={filtersOpen ? 'Hide' : 'Show'} variant="ghost" onPress={() => setFiltersOpen((prev) => !prev)} />
           </View>
           {filtersOpen ? (
-            <View className="gap-3">
+            <View style={styles.filtersForm}>
               <Input placeholder="Category" value={filters.category} onChangeText={(value) => updateFilter('category', value)} />
               <Input placeholder="Source" value={filters.source} onChangeText={(value) => updateFilter('source', value)} />
               <Input placeholder="Since (ISO)" value={filters.since} onChangeText={(value) => updateFilter('since', value)} />
@@ -160,9 +163,9 @@ export function FeedScreen() {
         />
 
         {segment === 'personalized' && personalizedQuery.data?.preferences ? (
-          <Card className="gap-3">
-            <Text className="text-sm text-muted-foreground dark:text-dark-muted-foreground">Your current preferences</Text>
-            <View className="flex-row flex-wrap gap-2">
+          <Card>
+            <Text style={[styles.prefText, { color: theme.colors.textSecondary }]}>Your current preferences</Text>
+            <View style={styles.badges}>
               <Badge label={`Categories: ${personalizedQuery.data.preferences.preferred_categories.join(', ') || 'None'}`} />
               <Badge label={`Sources: ${personalizedQuery.data.preferences.preferred_sources.join(', ') || 'None'}`} />
             </View>
@@ -177,7 +180,7 @@ export function FeedScreen() {
         ) : !data || data.stories.length === 0 ? (
           <EmptyState message="No stories available for these filters." />
         ) : (
-          <View className="gap-4">
+          <View style={styles.storyList}>
             {data.stories.map((story) => (
               <StoryCard
                 key={story.cluster_id}
@@ -196,3 +199,85 @@ export function FeedScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 20,
+  },
+  sectionHeader: {
+    gap: 6,
+  },
+  title: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  quickFilters: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 110,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+    gap: 2,
+  },
+  statCardWide: {
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+    gap: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    textTransform: 'uppercase',
+    fontWeight: '500',
+  },
+  statValue: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '700',
+  },
+  statTime: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+  filtersHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filtersTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
+  filtersForm: {
+    gap: 10,
+  },
+  prefText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  storyList: {
+    gap: 14,
+  },
+});
