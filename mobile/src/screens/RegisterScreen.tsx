@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
@@ -34,8 +34,9 @@ export function RegisterScreen() {
   const theme = getTheme(isDark);
 
   const {
-    control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -55,18 +56,15 @@ export function RegisterScreen() {
       password: values.password,
     };
 
-    // eslint-disable-next-line no-console
-    console.log('[auth][register] submit pressed payload:', {
-      email: requestPayload.email,
-      passwordLength: requestPayload.password.length,
-      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
-    });
-
     try {
-      await register(requestPayload);
-      navigation.navigate('Login');
+      const response = await register(requestPayload);
+      navigation.replace('Login', {
+        message:
+          response.message ||
+          'Account created successfully. Please confirm your email before logging in.',
+      });
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || 'Registration failed. Please try again.');
     }
   };
 
@@ -78,26 +76,20 @@ export function RegisterScreen() {
   return (
     <AuthLayout title="Create your account" subtitle="Sign up to customize your daily digest.">
       <View style={styles.formGroup}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <Input
-              placeholder="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={value}
-              onChangeText={onChange}
-              editable={!isSubmitting}
-            />
-          )}
+        <Input
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={watch('email')}
+          onChangeText={(value) => setValue('email', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
-          )}
+        <Input
+          placeholder="Password"
+          secureTextEntry
+          value={watch('password')}
+          onChangeText={(value) => setValue('password', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}

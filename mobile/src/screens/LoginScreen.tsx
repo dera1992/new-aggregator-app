@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { AuthLayout } from '@/components/AuthLayout';
@@ -15,29 +15,33 @@ import { useTheme } from '@/lib/theme/ThemeProvider';
 import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import type { FieldErrors } from 'react-hook-form';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
+type LoginRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<LoginRouteProp>();
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
 
   const {
-    control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -57,18 +61,11 @@ export function LoginScreen() {
       password: values.password,
     };
 
-    // eslint-disable-next-line no-console
-    console.log('[auth][login] submit pressed payload:', {
-      email: requestPayload.email,
-      passwordLength: requestPayload.password.length,
-      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
-    });
-
     try {
       const data = await login(requestPayload);
       await signIn(data.token);
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || 'Login failed. Please check your credentials and try again.');
     }
   };
 
@@ -80,35 +77,28 @@ export function LoginScreen() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to access your personalized news feed.">
       <View style={styles.formGroup}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <Input
-              placeholder="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={value}
-              onChangeText={onChange}
-              editable={!isSubmitting}
-            />
-          )}
+        <Input
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={watch('email')}
+          onChangeText={(value) => setValue('email', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
-          )}
+        <Input
+          placeholder="Password"
+          secureTextEntry
+          value={watch('password')}
+          onChangeText={(value) => setValue('password', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
       </View>
+      {route.params?.message ? <Text style={[styles.infoText, { color: theme.colors.primary }]}>{route.params.message}</Text> : null}
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit, onInvalid)} />
       {isSubmitting ? (
-        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
-          {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
-        </Text>
+        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}> {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}</Text>
       ) : null}
       <View style={styles.secondaryActions}>
         <Button label="Create account" variant="secondary" disabled={isSubmitting} onPress={() => navigation.navigate('Register')} />
@@ -134,5 +124,9 @@ const styles = StyleSheet.create({
   submittingHint: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

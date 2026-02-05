@@ -8,9 +8,9 @@ import { ForgotPasswordScreen } from '@/screens/ForgotPasswordScreen';
 import { ResetPasswordScreen } from '@/screens/ResetPasswordScreen';
 
 export type AuthStackParamList = {
-  Login: undefined;
+  Login: { message?: string } | undefined;
   Register: undefined;
-  ConfirmEmail: undefined;
+  ConfirmEmail: { email?: string; message?: string } | undefined;
   ForgotPassword: undefined;
   ResetPassword: { token?: string } | undefined;
 };
