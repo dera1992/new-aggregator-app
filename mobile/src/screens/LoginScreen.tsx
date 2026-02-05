@@ -51,14 +51,11 @@ export function LoginScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
-      return;
-    }
-
     try {
-      const data = await login(parsed.data);
+      const data = await login({
+        email: values.email.trim(),
+        password: values.password,
+      });
       await signIn(data.token);
     } catch (err) {
       setError((err as Error).message);
@@ -78,6 +75,7 @@ export function LoginScreen() {
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
+              editable={!isSubmitting}
             />
           )}
         />
@@ -85,7 +83,7 @@ export function LoginScreen() {
           control={control}
           name="password"
           render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
           )}
         />
       </View>
@@ -98,8 +96,8 @@ export function LoginScreen() {
         </Text>
       ) : null}
       <View style={styles.secondaryActions}>
-        <Button label="Create account" variant="secondary" onPress={() => navigation.navigate('Register')} />
-        <Button label="Forgot password" variant="ghost" onPress={() => navigation.navigate('ForgotPassword')} />
+        <Button label="Create account" variant="secondary" disabled={isSubmitting} onPress={() => navigation.navigate('Register')} />
+        <Button label="Forgot password" variant="ghost" disabled={isSubmitting} onPress={() => navigation.navigate('ForgotPassword')} />
       </View>
       <Text style={[styles.legalText, { color: theme.colors.textMuted }]}>By continuing you agree to the News Aggregator terms.</Text>
     </AuthLayout>

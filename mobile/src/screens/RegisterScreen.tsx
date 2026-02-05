@@ -49,14 +49,11 @@ export function RegisterScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse(values);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
-      return;
-    }
-
     try {
-      await register(values);
+      await register({
+        email: values.email.trim(),
+        password: values.password,
+      });
       navigation.navigate('Login');
     } catch (err) {
       setError((err as Error).message);
@@ -76,6 +73,7 @@ export function RegisterScreen() {
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
+              editable={!isSubmitting}
             />
           )}
         />
@@ -83,7 +81,7 @@ export function RegisterScreen() {
           control={control}
           name="password"
           render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
           )}
         />
       </View>
@@ -95,7 +93,7 @@ export function RegisterScreen() {
           {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
         </Text>
       ) : null}
-      <Button label="Back to login" variant="ghost" onPress={() => navigation.navigate('Login')} />
+      <Button label="Back to login" variant="ghost" disabled={isSubmitting} onPress={() => navigation.navigate('Login')} />
     </AuthLayout>
   );
 }
