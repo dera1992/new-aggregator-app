@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,7 +51,7 @@ export function ConfirmEmailScreen() {
 
   return (
     <AuthLayout title="Confirm your email" subtitle="Enter the verification code from your inbox.">
-      <View className="gap-3">
+      <View style={styles.formGroup}>
         <Input
           placeholder="Email"
           autoCapitalize="none"
@@ -72,3 +72,10 @@ export function ConfirmEmailScreen() {
     </AuthLayout>
   );
 }
+
+
+const styles = StyleSheet.create({
+  formGroup: {
+    gap: 12,
+  },
+});
