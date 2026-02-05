@@ -21,6 +21,8 @@ const schema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+type FormValues = z.infer<typeof schema>;
+
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -28,8 +30,6 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
@@ -51,20 +51,17 @@ export function LoginScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse({ email, password });
+    const parsed = schema.safeParse(values);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
       const data = await login(parsed.data);
       await signIn(data.token);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -91,7 +88,6 @@ export function LoginScreen() {
             <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
           )}
         />
-        <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}

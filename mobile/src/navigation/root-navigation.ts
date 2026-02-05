@@ -1,4 +1,4 @@
-import { createNavigationContainerRef } from '@react-navigation/native';
+import { CommonActions, createNavigationContainerRef } from '@react-navigation/native';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -8,8 +8,18 @@ export type RootStackParamList = {
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-export function navigate(name: keyof RootStackParamList, params?: RootStackParamList[keyof RootStackParamList]) {
-  if (navigationRef.isReady()) {
-    navigationRef.navigate(name as never, params as never);
+export function navigate<RouteName extends keyof RootStackParamList>(
+  name: RouteName,
+  params?: RootStackParamList[RouteName],
+) {
+  if (!navigationRef.isReady()) {
+    return;
   }
+
+  navigationRef.dispatch(
+    CommonActions.navigate({
+      name: name as string,
+      params: params as object | undefined,
+    }),
+  );
 }

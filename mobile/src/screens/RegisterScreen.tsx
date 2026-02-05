@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,14 +20,14 @@ const schema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+type FormValues = z.infer<typeof schema>;
+
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export function RegisterScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
@@ -48,20 +49,17 @@ export function RegisterScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse({ email, password });
+    const parsed = schema.safeParse(values);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
       await register(values);
       navigation.navigate('Login');
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -88,7 +86,6 @@ export function RegisterScreen() {
             <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
           )}
         />
-        <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
