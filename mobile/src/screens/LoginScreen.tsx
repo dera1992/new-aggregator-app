@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
@@ -19,7 +19,7 @@ import type { FieldErrors } from 'react-hook-form';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -36,8 +36,9 @@ export function LoginScreen() {
   const theme = getTheme(isDark);
 
   const {
-    control,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -80,26 +81,20 @@ export function LoginScreen() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to access your personalized news feed.">
       <View style={styles.formGroup}>
-        <Controller
-          control={control}
-          name="email"
-          render={({ field: { onChange, value } }) => (
-            <Input
-              placeholder="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={value}
-              onChangeText={onChange}
-              editable={!isSubmitting}
-            />
-          )}
+        <Input
+          placeholder="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={watch('email')}
+          onChangeText={(value) => setValue('email', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
-          )}
+        <Input
+          placeholder="Password"
+          secureTextEntry
+          value={watch('password')}
+          onChangeText={(value) => setValue('password', value, { shouldDirty: true, shouldValidate: false })}
+          editable={!isSubmitting}
         />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
