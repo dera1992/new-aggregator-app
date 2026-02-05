@@ -25,6 +25,8 @@ type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
 export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
@@ -83,6 +85,11 @@ export function LoginScreen() {
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
+      {isSubmitting ? (
+        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
+          {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
+        </Text>
+      ) : null}
       <View style={styles.secondaryActions}>
         <Button label="Create account" variant="secondary" onPress={() => navigation.navigate('Register')} />
         <Button label="Forgot password" variant="ghost" onPress={() => navigation.navigate('ForgotPassword')} />
@@ -101,6 +108,10 @@ const styles = StyleSheet.create({
   },
   legalText: {
     textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  submittingHint: {
     fontSize: 12,
     lineHeight: 16,
   },

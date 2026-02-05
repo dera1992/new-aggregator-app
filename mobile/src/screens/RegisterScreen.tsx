@@ -3,7 +3,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AuthLayout } from '@/components/AuthLayout';
@@ -11,6 +11,8 @@ import { Button } from '@/components/Button';
 import { ErrorState } from '@/components/ErrorState';
 import { Input } from '@/components/Input';
 import { register } from '@/lib/api/auth';
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
 
 const schema = z.object({
@@ -22,9 +24,13 @@ type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
 export function RegisterScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [error, setError] = useState('');
+  const { isDark } = useTheme();
+  const theme = getTheme(isDark);
 
   const {
     control,
@@ -77,6 +83,11 @@ export function RegisterScreen() {
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Creating account...' : 'Create account'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
+      {isSubmitting ? (
+        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
+          {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
+        </Text>
+      ) : null}
       <Button label="Back to login" variant="ghost" onPress={() => navigation.navigate('Login')} />
     </AuthLayout>
   );
@@ -85,5 +96,9 @@ export function RegisterScreen() {
 const styles = StyleSheet.create({
   formGroup: {
     gap: 12,
+  },
+  submittingHint: {
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

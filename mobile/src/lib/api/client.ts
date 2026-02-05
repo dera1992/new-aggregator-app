@@ -5,6 +5,7 @@ import { navigate } from '@/navigation/root-navigation';
 import type { ErrorResponse } from '@/types/user';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+const REQUEST_TIMEOUT_MS = 12000;
 
 if (!apiUrl) {
   // eslint-disable-next-line no-console
@@ -13,6 +14,7 @@ if (!apiUrl) {
 
 export const apiClient = axios.create({
   baseURL: apiUrl,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -65,7 +67,15 @@ function normalizeError(error: any) {
 function buildFriendlyNetworkError(error: any) {
   const code = error?.code;
   const hasResponse = Boolean(error?.response);
-  if (hasResponse || code !== 'ERR_NETWORK') {
+  if (hasResponse) {
+    return null;
+  }
+
+  if (code === 'ECONNABORTED') {
+    return `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Verify backend URL, phone/computer network, and Flask server availability.`;
+  }
+
+  if (code !== 'ERR_NETWORK') {
     return null;
   }
 
