@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 import { clearToken, getToken } from '../auth/token';
 import { navigate } from '@/navigation/root-navigation';
@@ -7,13 +8,30 @@ import type { ErrorResponse } from '@/types/user';
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 const REQUEST_TIMEOUT_MS = 12000;
 
+function resolveApiUrl(rawApiUrl: string | undefined) {
+  if (!rawApiUrl) {
+    return rawApiUrl;
+  }
+
+  if (Platform.OS !== 'android') {
+    return rawApiUrl;
+  }
+
+  return rawApiUrl.replace('://localhost', '://10.0.2.2').replace('://127.0.0.1', '://10.0.2.2');
+}
+
+const resolvedApiUrl = resolveApiUrl(apiUrl);
+
 if (!apiUrl) {
   // eslint-disable-next-line no-console
   console.warn('EXPO_PUBLIC_API_URL is not set.');
+} else if (resolvedApiUrl !== apiUrl) {
+  // eslint-disable-next-line no-console
+  console.warn(`Using Android emulator API URL rewrite: ${apiUrl} -> ${resolvedApiUrl}`);
 }
 
 export const apiClient = axios.create({
-  baseURL: apiUrl,
+  baseURL: resolvedApiUrl,
   timeout: REQUEST_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
@@ -80,6 +98,9 @@ function buildFriendlyNetworkError(error: any) {
   }
 
   if (apiUrl?.includes('localhost') || apiUrl?.includes('127.0.0.1')) {
+    if (Platform.OS === 'android') {
+      return 'Cannot reach API from Android emulator using localhost. Use http://10.0.2.2:<port> (or your LAN IP for Expo Go on a physical phone).';
+    }
     return 'Cannot reach API from Expo Go. On a physical phone, use your computer LAN IP (example: http://192.168.x.x:8080) instead of localhost.';
   }
 
