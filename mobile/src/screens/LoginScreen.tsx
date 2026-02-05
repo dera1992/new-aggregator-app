@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet as RNStyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigation } from '@react-navigation/native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AuthLayout } from '@/components/AuthLayout';
 import { Button } from '@/components/Button';
@@ -29,11 +31,24 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
 
-  const onSubmit = async () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const validationError = useMemo(
+    () => errors.email?.message ?? errors.password?.message ?? '',
+    [errors.email?.message, errors.password?.message],
+  );
+
+  const onSubmit = async (values: FormValues) => {
     setError('');
 
     const parsed = schema.safeParse({ email, password });
@@ -56,18 +71,31 @@ export function LoginScreen() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to access your personalized news feed.">
       <View style={styles.formGroup}>
-        <Input
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, value } }) => (
+            <Input
+              placeholder="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={value}
+              onChangeText={onChange}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, value } }) => (
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+          )}
         />
         <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={onSubmit} />
+      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
       {isSubmitting ? (
         <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
           {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
@@ -82,7 +110,7 @@ export function LoginScreen() {
   );
 }
 
-const styles = RNStyleSheet.create({
+const styles = StyleSheet.create({
   formGroup: {
     gap: 12,
   },
