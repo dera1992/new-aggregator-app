@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { z } from 'zod';
 import { useNavigation } from '@react-navigation/native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AuthLayout } from '@/components/AuthLayout';
@@ -63,6 +64,7 @@ export function RegisterScreen() {
         />
         <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
+      {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
       <Button label={isSubmitting ? 'Creating account...' : 'Create account'} disabled={isSubmitting} onPress={onSubmit} />
       {isSubmitting ? (
