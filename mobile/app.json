@@ -1,24 +1,13 @@
 {
   "expo": {
-    "name": "News Aggregator",
-    "slug": "news-aggregator",
-    "scheme": "newsaggregator",
+    "name": "news-aggregator-mobile",
+    "slug": "news-aggregator-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "assetBundlePatterns": ["**/*"],
-    "ios": {
-      "supportsTablet": true
-    },
+    "sdkVersion": "49.0.0",
+    "userInterfaceStyle": "automatic",
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
-      }
-    },
-    "extra": {
-      "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
-      }
+      "package": "com.dera1992.newsaggregatormobile"
     }
   }
 }
