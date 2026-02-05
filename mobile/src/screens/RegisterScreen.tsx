@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -43,7 +43,7 @@ export function RegisterScreen() {
 
   return (
     <AuthLayout title="Create your account" subtitle="Sign up to customize your daily digest.">
-      <View className="gap-3">
+      <View style={styles.formGroup}>
         <Input
           placeholder="Name"
           value={watch('name')}
@@ -69,3 +69,10 @@ export function RegisterScreen() {
     </AuthLayout>
   );
 }
+
+
+const styles = StyleSheet.create({
+  formGroup: {
+    gap: 12,
+  },
+});
