@@ -2,11 +2,15 @@ import { apiClient } from './client';
 import type { AuthResponse, MessageResponse } from '@/types/user';
 
 export async function login(payload: { email: string; password: string }) {
+  // eslint-disable-next-line no-console
+  console.log('[auth][api] POST /api/auth/login payload:', { email: payload.email, passwordLength: payload.password.length });
   const { data } = await apiClient.post<AuthResponse>('/api/auth/login', payload);
   return data;
 }
 
 export async function register(payload: { email: string; password: string; name?: string }) {
+  // eslint-disable-next-line no-console
+  console.log('[auth][api] POST /api/auth/register payload:', { email: payload.email, passwordLength: payload.password.length });
   const { data } = await apiClient.post<MessageResponse>('/api/auth/register', payload);
   return data;
 }

@@ -15,6 +15,7 @@ import { useTheme } from '@/lib/theme/ThemeProvider';
 import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { FieldErrors } from 'react-hook-form';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -51,15 +52,29 @@ export function LoginScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
+    const requestPayload = {
+      email: values.email.trim(),
+      password: values.password,
+    };
+
+    // eslint-disable-next-line no-console
+    console.log('[auth][login] submit pressed payload:', {
+      email: requestPayload.email,
+      passwordLength: requestPayload.password.length,
+      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
+    });
+
     try {
-      const data = await login({
-        email: values.email.trim(),
-        password: values.password,
-      });
+      const data = await login(requestPayload);
       await signIn(data.token);
     } catch (err) {
       setError((err as Error).message);
     }
+  };
+
+  const onInvalid = (formErrors: FieldErrors<FormValues>) => {
+    // eslint-disable-next-line no-console
+    console.log('[auth][login] submit blocked by validation errors:', formErrors);
   };
 
   return (
@@ -89,7 +104,7 @@ export function LoginScreen() {
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
+      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit, onInvalid)} />
       {isSubmitting ? (
         <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
           {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
