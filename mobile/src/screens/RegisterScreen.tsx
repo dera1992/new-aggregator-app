@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,11 +14,14 @@ import { register } from '@/lib/api/auth';
 import { useTheme } from '@/lib/theme/ThemeProvider';
 import { getTheme } from '@/lib/theme/tokens';
 import type { AuthStackParamList } from '@/navigation/AuthStack';
+import type { FieldErrors } from 'react-hook-form';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -25,8 +29,6 @@ const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
 export function RegisterScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
@@ -48,21 +50,29 @@ export function RegisterScreen() {
   const onSubmit = async (values: FormValues) => {
     setError('');
 
-    const parsed = schema.safeParse({ email, password });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Please check your inputs.');
-      return;
-    }
+    const requestPayload = {
+      email: values.email.trim(),
+      password: values.password,
+    };
 
-    setIsSubmitting(true);
+    // eslint-disable-next-line no-console
+    console.log('[auth][register] submit pressed payload:', {
+      email: requestPayload.email,
+      passwordLength: requestPayload.password.length,
+      apiUrl: apiUrl ?? 'EXPO_PUBLIC_API_URL not set',
+    });
+
     try {
-      await register(values);
+      await register(requestPayload);
       navigation.navigate('Login');
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setIsSubmitting(false);
     }
+  };
+
+  const onInvalid = (formErrors: FieldErrors<FormValues>) => {
+    // eslint-disable-next-line no-console
+    console.log('[auth][register] submit blocked by validation errors:', formErrors);
   };
 
   return (
@@ -78,6 +88,7 @@ export function RegisterScreen() {
               keyboardType="email-address"
               value={value}
               onChangeText={onChange}
+              editable={!isSubmitting}
             />
           )}
         />
@@ -85,20 +96,19 @@ export function RegisterScreen() {
           control={control}
           name="password"
           render={({ field: { onChange, value } }) => (
-            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} />
+            <Input placeholder="Password" secureTextEntry value={value} onChangeText={onChange} editable={!isSubmitting} />
           )}
         />
-        <Input placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
       </View>
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      <Button label={isSubmitting ? 'Creating account...' : 'Create account'} disabled={isSubmitting} onPress={handleSubmit(onSubmit)} />
+      <Button label={isSubmitting ? 'Creating account...' : 'Create account'} disabled={isSubmitting} onPress={handleSubmit(onSubmit, onInvalid)} />
       {isSubmitting ? (
         <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}>
           {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}
         </Text>
       ) : null}
-      <Button label="Back to login" variant="ghost" onPress={() => navigation.navigate('Login')} />
+      <Button label="Back to login" variant="ghost" disabled={isSubmitting} onPress={() => navigation.navigate('Login')} />
     </AuthLayout>
   );
 }
