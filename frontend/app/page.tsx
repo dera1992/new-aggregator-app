@@ -58,8 +58,13 @@ export default function HomePage() {
   return (
     <div
       id="home"
-      className="min-h-screen bg-[#F5F5F5] text-[#333333] dark:bg-slate-950 dark:text-slate-100"
+      className="relative min-h-screen overflow-hidden bg-[#F5F5F5] text-[#333333] dark:bg-slate-950 dark:text-slate-100"
     >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#4A90E2]/15 blur-3xl dark:bg-sky-500/20" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 translate-x-1/3 rounded-full bg-[#FF6600]/10 blur-3xl dark:bg-orange-500/20" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(74,144,226,0.08),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_55%)]" />
+      </div>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/20 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link
