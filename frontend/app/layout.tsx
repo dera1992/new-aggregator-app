@@ -22,7 +22,7 @@ export default function RootLayout({
 (() => {
   try {
     const stored = localStorage.getItem('theme');
-    const theme = stored || 'light';
+    const theme = stored || 'dark';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const resolved = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
     if (resolved === 'dark') {
@@ -31,7 +31,7 @@ export default function RootLayout({
       document.documentElement.classList.remove('dark');
     }
   } catch (_e) {
-    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('dark');
   }
 })();
 `,
