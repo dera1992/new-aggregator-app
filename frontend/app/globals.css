@@ -85,7 +85,11 @@
 
   body::after {
     background:
-      radial-gradient(circle at 20% 85%, rgba(255, 102, 0, 0.16), transparent 60%);
+      radial-gradient(circle at 20% 85%, rgba(255, 102, 0, 0.24), transparent 65%),
+      radial-gradient(circle, rgba(74, 144, 226, 0.4) 1.6px, transparent 1.6px),
+      radial-gradient(circle, rgba(255, 102, 0, 0.32) 1.4px, transparent 1.4px);
+    background-size: 100% 100%, 90px 90px, 140px 140px;
+    background-position: center, 0 0, 45px 30px;
   }
 
   .dark body::before {
@@ -97,7 +101,11 @@
 
   .dark body::after {
     background:
-      radial-gradient(circle at 25% 85%, rgba(249, 115, 22, 0.22), transparent 60%);
+      radial-gradient(circle at 25% 85%, rgba(249, 115, 22, 0.32), transparent 65%),
+      radial-gradient(circle, rgba(56, 189, 248, 0.5) 1.6px, transparent 1.6px),
+      radial-gradient(circle, rgba(249, 115, 22, 0.42) 1.4px, transparent 1.4px);
+    background-size: 100% 100%, 100px 100px, 160px 160px;
+    background-position: center, 0 0, 60px 40px;
   }
 
   a {
