@@ -1,16 +1,18 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Blueprint, jsonify, request, g
 from pydantic import ValidationError
-from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
+from models.models import Article, SavedArticle, ReadArticle, StoryInsight, UserPreferences, db
 from schemas.comment import CommentRequest
 from schemas.analysis import AnalysisRequest
 from schemas.joke import JokeRequest
 from schemas.viral_post import ViralPostRequest
 from schemas.paste import PasteTextRequest, SummaryRequest
+from schemas.perspective import PerspectiveRequest
 from services.comment_generator import generate_comment, CommentGenError
 from services.analysis_generator import generate_analysis, AnalysisGenError
 from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
+from services.perspective_generator import generate_perspective, PerspectiveError
 from services.summary_generator import generate_summary, SummaryGenError
 from utils.decorators import token_required
 
@@ -55,6 +57,7 @@ def get_clustered_feed():
                 "sources": [],
                 "timestamp": a.created_at.isoformat(),  # Convert for JSON
                 "lead_article_id": a.id,
+                "primary_article_id": a.id,
             }
 
         stories[cid]["sources"].append({
@@ -114,6 +117,7 @@ def get_personalized_feed():
                 "sources": [],
                 "timestamp": a.created_at.isoformat(),
                 "lead_article_id": a.id,
+                "primary_article_id": a.id,
             }
         stories[cid]["sources"].append({
             "article_id": a.id,
@@ -200,6 +204,47 @@ def get_story(cluster_id):
             for a in articles
         ]
     })
+
+
+@news_bp.route('/api/news/generate-perspective', methods=['POST'])
+@token_required
+def generate_perspective_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = PerspectiveRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    now = datetime.utcnow()
+    if not request_data.force_refresh:
+        cached = StoryInsight.query.filter_by(cluster_id=request_data.cluster_id).first()
+        if cached and cached.expires_at and cached.expires_at > now:
+            return jsonify(cached.perspective_json)
+
+    try:
+        result = generate_perspective(
+            cluster_id=request_data.cluster_id,
+            tone=request_data.tone,
+            slang_level=request_data.slang_level,
+        )
+    except PerspectiveError as exc:
+        message = str(exc)
+        status = 404 if message == "Story not found." else 502
+        return jsonify({"message": message}), status
+
+    insight = StoryInsight.query.filter_by(cluster_id=request_data.cluster_id).first()
+    if insight is None:
+        insight = StoryInsight(cluster_id=request_data.cluster_id)
+        db.session.add(insight)
+
+    insight.perspective_json = result
+    insight.expires_at = now + timedelta(hours=12)
+    insight.updated_at = now
+    insight.model_version = "perspective_v1"
+
+    db.session.commit()
+
+    return jsonify(result)
 
 
 @news_bp.route("/api/news/save", methods=["POST"])

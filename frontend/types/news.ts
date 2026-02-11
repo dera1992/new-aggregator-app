@@ -1,4 +1,5 @@
 export type StorySource = {
+  article_id?: number;
   name: string;
   url: string;
   title?: string;
@@ -11,6 +12,7 @@ export type Story = {
   sources: StorySource[];
   timestamp: string;
   lead_article_id?: number;
+  primary_article_id?: number;
 };
 
 export type FeedResponse = {
@@ -49,7 +51,43 @@ export type StoryResponse = {
   cluster_id: number;
   story_title: string;
   summary: string;
-  sources: { name: string; url: string; title: string }[];
+  sources: StorySource[];
+};
+
+export type PerspectiveTone = 'genz' | 'neutral' | 'professional';
+export type PerspectiveSlangLevel = 'none' | 'light' | 'heavy';
+
+export type PerspectiveAngle = {
+  label: string;
+  summary: string;
+  key_points: string[];
+  risks?: string[];
+  slang_level?: string;
+};
+
+export type PerspectiveEmotion = {
+  emotion: string;
+  score: number;
+};
+
+export type PerspectiveResponse = {
+  cluster_id: number;
+  neutral_facts: string[];
+  what_we_know: string[];
+  what_is_unclear: string[];
+  angles: PerspectiveAngle[];
+  sentiment: {
+    top_emotions: PerspectiveEmotion[];
+    top_questions: string[];
+    shareable_claims: string[];
+  };
+  scores: {
+    bias: { value: number; label: string };
+    clickbait: number;
+    evidence: number;
+  };
+  sources: Array<{ name: string; url: string }>;
+  generated_at: string;
 };
 
 export type SavedArticlesResponse = {
@@ -87,9 +125,19 @@ export type CommentResponse = {
   comments: CommentVariant[];
 };
 
-export type JokePlatform = 'General' | 'Twitter' | 'LinkedIn' | 'Instagram' | 'Reddit';
+export type JokePlatform =
+  | 'General'
+  | 'Twitter'
+  | 'LinkedIn'
+  | 'Instagram'
+  | 'Reddit';
 
-export type JokeStyle = 'pun' | 'one_liner' | 'observational' | 'satire_light' | 'dad_joke';
+export type JokeStyle =
+  | 'pun'
+  | 'one_liner'
+  | 'observational'
+  | 'satire_light'
+  | 'dad_joke';
 
 export type GenerateJokeRequest = {
   summary: string;
@@ -115,8 +163,17 @@ export type GenerateJokeResponse = {
 };
 
 export type AnalysisFormat = 'brief' | 'standard' | 'deep';
-export type AnalysisTone = 'neutral' | 'insightful' | 'skeptical' | 'optimistic';
-export type AnalysisAudience = 'general' | 'business' | 'tech' | 'policy' | 'investors';
+export type AnalysisTone =
+  | 'neutral'
+  | 'insightful'
+  | 'skeptical'
+  | 'optimistic';
+export type AnalysisAudience =
+  | 'general'
+  | 'business'
+  | 'tech'
+  | 'policy'
+  | 'investors';
 
 export type GenerateAnalysisRequest = {
   summary: string;

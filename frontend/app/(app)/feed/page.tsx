@@ -4,7 +4,11 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchFeed, fetchPersonalizedFeed, type FeedQuery } from '@/lib/api/news';
+import {
+  fetchFeed,
+  fetchPersonalizedFeed,
+  type FeedQuery,
+} from '@/lib/api/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -55,8 +59,11 @@ export default function FeedPage() {
       if (!payload) {
         return false;
       }
-      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-      const userId = typeof decoded.user_id === 'number' ? decoded.user_id : null;
+      const decoded = JSON.parse(
+        atob(payload.replace(/-/g, '+').replace(/_/g, '/')),
+      );
+      const userId =
+        typeof decoded.user_id === 'number' ? decoded.user_id : null;
       return userId !== null && String(userId) === String(adminUserId);
     } catch {
       return false;
@@ -65,7 +72,9 @@ export default function FeedPage() {
 
   const feedStats = useMemo(() => {
     const stories = feedQuery.data?.stories ?? [];
-    const sources = new Set(stories.flatMap((story) => story.sources.map((source) => source.name)));
+    const sources = new Set(
+      stories.flatMap((story) => story.sources.map((source) => source.name)),
+    );
     const latestTimestamp = stories
       .map((story) => story.timestamp)
       .sort()
@@ -73,7 +82,9 @@ export default function FeedPage() {
     return {
       storyCount: stories.length,
       sourceCount: sources.size,
-      lastUpdated: latestTimestamp ? new Date(latestTimestamp).toLocaleString() : '—',
+      lastUpdated: latestTimestamp
+        ? new Date(latestTimestamp).toLocaleString()
+        : '—',
     };
   }, [feedQuery.data?.stories]);
 
@@ -137,7 +148,10 @@ export default function FeedPage() {
     return (
       <div className="space-y-4">
         {data.stories.map((story, index) => (
-          <Card key={`${story.story_title}-${index}`} className="w-full min-w-0">
+          <Card
+            key={`${story.story_title}-${index}`}
+            className="w-full min-w-0"
+          >
             <CardHeader>
               <CardTitle className="break-words">{story.story_title}</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -145,7 +159,9 @@ export default function FeedPage() {
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="break-words text-sm text-muted-foreground">{story.summary}</p>
+              <p className="break-words text-sm text-muted-foreground">
+                {story.summary}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {story.sources.map((source) => (
                   <a
@@ -163,6 +179,11 @@ export default function FeedPage() {
                 <Button asChild variant="secondary" size="sm">
                   <Link href={`/story/${story.cluster_id}`}>
                     Generate content
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/story/${story.cluster_id}?tab=perspective`}>
+                    Perspective
                   </Link>
                 </Button>
               </div>
@@ -183,9 +204,12 @@ export default function FeedPage() {
     <div className="space-y-6">
       <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle className="break-words">Today&apos;s Top Stories</CardTitle>
+          <CardTitle className="break-words">
+            Today&apos;s Top Stories
+          </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Browse the latest clustered news summaries. Use filters to narrow by category, source, or time.
+            Browse the latest clustered news summaries. Use filters to narrow by
+            category, source, or time.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -205,15 +229,21 @@ export default function FeedPage() {
           {isAdmin ? (
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-border bg-background p-3">
-                <p className="text-xs uppercase text-muted-foreground">Stories loaded</p>
+                <p className="text-xs uppercase text-muted-foreground">
+                  Stories loaded
+                </p>
                 <p className="text-lg font-semibold">{feedStats.storyCount}</p>
               </div>
               <div className="rounded-md border border-border bg-background p-3">
-                <p className="text-xs uppercase text-muted-foreground">Sources</p>
+                <p className="text-xs uppercase text-muted-foreground">
+                  Sources
+                </p>
                 <p className="text-lg font-semibold">{feedStats.sourceCount}</p>
               </div>
               <div className="rounded-md border border-border bg-background p-3">
-                <p className="text-xs uppercase text-muted-foreground">Last updated</p>
+                <p className="text-xs uppercase text-muted-foreground">
+                  Last updated
+                </p>
                 <p className="text-sm font-medium">{feedStats.lastUpdated}</p>
               </div>
             </div>
@@ -249,7 +279,9 @@ export default function FeedPage() {
             min={1}
             placeholder="Limit"
             value={filters.limit}
-            onChange={(event) => updateFilter('limit', Number(event.target.value))}
+            onChange={(event) =>
+              updateFilter('limit', Number(event.target.value))
+            }
           />
           <Input
             className="w-full"
@@ -257,7 +289,9 @@ export default function FeedPage() {
             min={0}
             placeholder="Offset"
             value={filters.offset}
-            onChange={(event) => updateFilter('offset', Number(event.target.value))}
+            onChange={(event) =>
+              updateFilter('offset', Number(event.target.value))
+            }
           />
         </CardContent>
       </Card>
@@ -280,10 +314,16 @@ export default function FeedPage() {
               {personalizedQuery.data?.preferences ? (
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">
-                    Categories: {personalizedQuery.data.preferences.preferred_categories.join(', ') || 'None'}
+                    Categories:{' '}
+                    {personalizedQuery.data.preferences.preferred_categories.join(
+                      ', ',
+                    ) || 'None'}
                   </Badge>
                   <Badge variant="secondary">
-                    Sources: {personalizedQuery.data.preferences.preferred_sources.join(', ') || 'None'}
+                    Sources:{' '}
+                    {personalizedQuery.data.preferences.preferred_sources.join(
+                      ', ',
+                    ) || 'None'}
                   </Badge>
                 </div>
               ) : (

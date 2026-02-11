@@ -12,6 +12,9 @@ import type {
   GenerateJokeResponse,
   GenerateAnalysisRequest,
   GenerateAnalysisResponse,
+  PerspectiveResponse,
+  PerspectiveTone,
+  PerspectiveSlangLevel,
 } from '@/types/news';
 
 export type FeedQuery = {
@@ -106,5 +109,24 @@ export function generateAnalysis(payload: GenerateAnalysisRequest) {
   return apiFetch<GenerateAnalysisResponse>(`/api/news/generate-analysis`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export function generatePerspective(
+  clusterId: number,
+  opts?: {
+    tone?: PerspectiveTone;
+    slangLevel?: PerspectiveSlangLevel;
+    forceRefresh?: boolean;
+  },
+) {
+  return apiFetch<PerspectiveResponse>(`/api/news/generate-perspective`, {
+    method: 'POST',
+    body: JSON.stringify({
+      cluster_id: clusterId,
+      tone: opts?.tone ?? 'genz',
+      slang_level: opts?.slangLevel ?? 'light',
+      force_refresh: opts?.forceRefresh ?? false,
+    }),
   });
 }
