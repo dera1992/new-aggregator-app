@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
+from sqlalchemy.dialects.postgresql import JSONB
 import bcrypt
 import hashlib
 
@@ -90,3 +91,13 @@ class ReadArticle(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint("user_id", "article_id", name="uniq_user_read"),)
+
+
+class StoryInsight(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cluster_id = db.Column(db.Integer, unique=True, nullable=False, index=True)
+    perspective_json = db.Column(db.JSON().with_variant(JSONB, "postgresql"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=12))
+    model_version = db.Column(db.String(50), default="perspective_v1", nullable=False)
