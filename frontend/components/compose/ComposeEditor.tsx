@@ -8,12 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 
-export type ComposeAction = 'summary' | 'analysis' | 'joke' | 'viral' | 'comment';
+export type ComposeAction =
+  | 'summary'
+  | 'analysis'
+  | 'joke'
+  | 'viral'
+  | 'comment';
 
 export type SummaryOptions = {
   style: 'short' | 'standard' | 'detailed';
@@ -165,7 +176,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      summary: { ...prev.summary, style: value as SummaryOptions['style'] },
+                      summary: {
+                        ...prev.summary,
+                        style: value as SummaryOptions['style'],
+                      },
                     }))
                   }
                 >
@@ -188,7 +202,10 @@ export function ComposeEditor({
                   onChange={(event) =>
                     setOptions((prev) => ({
                       ...prev,
-                      summary: { ...prev.summary, maxLength: event.target.value },
+                      summary: {
+                        ...prev.summary,
+                        maxLength: event.target.value,
+                      },
                     }))
                   }
                   placeholder="Optional"
@@ -207,7 +224,10 @@ export function ComposeEditor({
                     onValueChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, format: value as AnalysisOptions['format'] },
+                        analysis: {
+                          ...prev.analysis,
+                          format: value as AnalysisOptions['format'],
+                        },
                       }))
                     }
                   >
@@ -228,7 +248,10 @@ export function ComposeEditor({
                     onValueChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, tone: value as AnalysisOptions['tone'] },
+                        analysis: {
+                          ...prev.analysis,
+                          tone: value as AnalysisOptions['tone'],
+                        },
                       }))
                     }
                   >
@@ -274,7 +297,9 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include takeaways</Label>
-                    <p className="text-xs text-muted-foreground">Actionable bullet points.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Actionable bullet points.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeTakeaways}
@@ -289,14 +314,19 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include counterpoints</Label>
-                    <p className="text-xs text-muted-foreground">Alternative viewpoints.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Alternative viewpoints.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeCounterpoints}
                     onCheckedChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, includeCounterpoints: value },
+                        analysis: {
+                          ...prev.analysis,
+                          includeCounterpoints: value,
+                        },
                       }))
                     }
                   />
@@ -304,14 +334,19 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include what to watch</Label>
-                    <p className="text-xs text-muted-foreground">Upcoming signals.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Upcoming signals.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeWhatToWatch}
                     onCheckedChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, includeWhatToWatch: value },
+                        analysis: {
+                          ...prev.analysis,
+                          includeWhatToWatch: value,
+                        },
                       }))
                     }
                   />
@@ -319,7 +354,9 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Fact mode</Label>
-                    <p className="text-xs text-muted-foreground">Stick to pasted facts.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Stick to pasted facts.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.factMode}
@@ -344,7 +381,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      joke: { ...prev.joke, platform: value as JokeOptions['platform'] },
+                      joke: {
+                        ...prev.joke,
+                        platform: value as JokeOptions['platform'],
+                      },
                     }))
                   }
                 >
@@ -367,7 +407,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      joke: { ...prev.joke, style: value as JokeOptions['style'] },
+                      joke: {
+                        ...prev.joke,
+                        style: value as JokeOptions['style'],
+                      },
                     }))
                   }
                 >
@@ -417,7 +460,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Humor grounded in facts.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Humor grounded in facts.
+                  </p>
                 </div>
                 <Switch
                   checked={options.joke.factMode}
@@ -441,7 +486,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, platform: value as ViralOptions['platform'] },
+                      viral: {
+                        ...prev.viral,
+                        platform: value as ViralOptions['platform'],
+                      },
                     }))
                   }
                 >
@@ -528,7 +576,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Keep claims grounded.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Keep claims grounded.
+                  </p>
                 </div>
                 <Switch
                   checked={options.viral.factMode}
@@ -603,7 +653,10 @@ export function ComposeEditor({
                   onChange={(event) =>
                     setOptions((prev) => ({
                       ...prev,
-                      comment: { ...prev.comment, audience: event.target.value },
+                      comment: {
+                        ...prev.comment,
+                        audience: event.target.value,
+                      },
                     }))
                   }
                   placeholder="e.g. fintech community"
@@ -630,7 +683,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Keep it accurate.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Keep it accurate.
+                  </p>
                 </div>
                 <Switch
                   checked={options.comment.factMode}
@@ -651,7 +706,6 @@ export function ComposeEditor({
           size="lg"
           onClick={onGenerate}
           disabled={isGenerateDisabled}
-          className="mt-auto"
         >
           <Rocket className="h-4 w-4" />
           {isLoading ? 'Generating...' : 'Generate'}
