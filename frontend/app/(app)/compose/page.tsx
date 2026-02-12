@@ -39,14 +39,14 @@ const defaultOptions: ComposeOptions = {
   joke: {
     platform: 'General',
     style: 'one_liner',
-    audience: '',
+    audience: 'General audience',
     maxVariants: 3,
     factMode: true,
   },
   viral: {
     platform: 'twitter',
     tone: 'punchy',
-    goal: 'Drive engagement',
+    goal: 'engagement',
     audience: 'General audience',
     brandVoice: 'clear and confident',
     maxVariants: 3,
@@ -109,10 +109,16 @@ export default function ComposePage() {
   }, [action]);
 
   const charCount = text.trim().length;
-  const canGenerate = charCount >= 50;
+  const minCharacters = 50;
+  const remainingChars = Math.max(0, minCharacters - charCount);
+  const canGenerate = charCount >= minCharacters;
 
   const mutation = useMutation({
-    mutationFn: async (payload: { action: ComposeAction; text: string; options: ComposeOptions }) => {
+    mutationFn: async (payload: {
+      action: ComposeAction;
+      text: string;
+      options: ComposeOptions;
+    }) => {
       if (payload.text.trim().length < 50) {
         throw new Error('Paste at least 50 characters to generate content.');
       }
@@ -133,7 +139,8 @@ export default function ComposePage() {
             tone: payload.options.analysis.tone,
             audience: payload.options.analysis.audience,
             include_takeaways: payload.options.analysis.includeTakeaways,
-            include_counterpoints: payload.options.analysis.includeCounterpoints,
+            include_counterpoints:
+              payload.options.analysis.includeCounterpoints,
             include_what_to_watch: payload.options.analysis.includeWhatToWatch,
             fact_mode: payload.options.analysis.factMode,
           });
@@ -237,6 +244,7 @@ export default function ComposePage() {
         onPaste={handlePaste}
         isLoading={mutation.isPending}
         isGenerateDisabled={!canGenerate || mutation.isPending}
+        remainingChars={remainingChars}
       />
       <ComposeResults
         result={result}
@@ -267,9 +275,15 @@ function buildDraftContent(result: ComposeResult) {
         variant.title ? `Title: ${variant.title}` : '',
         variant.hook ? `Hook: ${variant.hook}` : '',
         variant.analysis ? `Analysis: ${variant.analysis}` : '',
-        variant.key_takeaways.length ? `Key takeaways:\n- ${variant.key_takeaways.join('\n- ')}` : '',
-        variant.counterpoints.length ? `Counterpoints:\n- ${variant.counterpoints.join('\n- ')}` : '',
-        variant.what_to_watch.length ? `What to watch:\n- ${variant.what_to_watch.join('\n- ')}` : '',
+        variant.key_takeaways.length
+          ? `Key takeaways:\n- ${variant.key_takeaways.join('\n- ')}`
+          : '',
+        variant.counterpoints.length
+          ? `Counterpoints:\n- ${variant.counterpoints.join('\n- ')}`
+          : '',
+        variant.what_to_watch.length
+          ? `What to watch:\n- ${variant.what_to_watch.join('\n- ')}`
+          : '',
         `Reading time: ${variant.reading_time_seconds}s`,
       ].filter(Boolean);
       return parts.join('\n\n');
@@ -299,7 +313,9 @@ function buildDraftContent(result: ComposeResult) {
       if (!comment) {
         return '';
       }
-      return [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
+      return [comment.comment, comment.cta_question]
+        .filter(Boolean)
+        .join('\n\n');
     }
     default:
       return '';
