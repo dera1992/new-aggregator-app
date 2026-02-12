@@ -136,6 +136,10 @@ type ComposeEditorProps = {
   onGenerate: () => void;
   onClear: () => void;
   onPaste: () => void;
+  articleUrl: string;
+  onArticleUrlChange: (value: string) => void;
+  onImportUrl: () => void;
+  isImportingUrl: boolean;
   isLoading: boolean;
   isGenerateDisabled: boolean;
   remainingChars: number;
@@ -151,6 +155,10 @@ export function ComposeEditor({
   onGenerate,
   onClear,
   onPaste,
+  articleUrl,
+  onArticleUrlChange,
+  onImportUrl,
+  isImportingUrl,
   isLoading,
   isGenerateDisabled,
   remainingChars,
@@ -194,12 +202,27 @@ export function ComposeEditor({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="article-url">Article URL (optional)</Label>
-          <Input
-            id="article-url"
-            disabled
-            placeholder="URL fetching coming soon"
-          />
+          <Label htmlFor="article-url">Article or YouTube URL (optional)</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="article-url"
+              value={articleUrl}
+              onChange={(event) => onArticleUrlChange(event.target.value)}
+              placeholder="https://example.com/article or https://www.youtube.com/watch?v=..."
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onImportUrl}
+              disabled={isImportingUrl}
+            >
+              {isImportingUrl ? 'Importing...' : 'Import URL'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Supports standard article links and YouTube videos with available
+            captions.
+          </p>
         </div>
 
         <div className="space-y-4">

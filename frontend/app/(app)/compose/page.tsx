@@ -10,6 +10,7 @@ import {
   generateJokeFromText,
   generateSummaryFromText,
   generateViralPostFromText,
+  extractUrlText,
 } from '@/lib/api/compose';
 import {
   ComposeEditor,
@@ -75,6 +76,7 @@ export default function ComposePage() {
   const [text, setText] = useState('');
   const [action, setAction] = useState<ComposeAction>('summary');
   const [options, setOptions] = useState<ComposeOptions>(defaultOptions);
+  const [articleUrl, setArticleUrl] = useState('');
   const [result, setResult] = useState<ComposeResult | null>(null);
   const [drafts, setDrafts] = useState<ComposeDraft[]>([]);
 
@@ -112,6 +114,22 @@ export default function ComposePage() {
   const minCharacters = 50;
   const remainingChars = Math.max(0, minCharacters - charCount);
   const canGenerate = charCount >= minCharacters;
+
+  const urlImportMutation = useMutation({
+    mutationFn: async (url: string) =>
+      extractUrlText({
+        url,
+      }),
+    onSuccess: (data) => {
+      setText(data.text);
+      toast.success(
+        data.source_type === 'youtube'
+          ? 'Imported YouTube transcript into editor.'
+          : 'Imported article text into editor.',
+      );
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
 
   const mutation = useMutation({
     mutationFn: async (payload: {
@@ -184,6 +202,16 @@ export default function ComposePage() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
+  const handleImportUrl = () => {
+    const normalizedUrl = articleUrl.trim();
+    if (!normalizedUrl) {
+      toast.error('Paste an article or YouTube URL first.');
+      return;
+    }
+
+    urlImportMutation.mutate(normalizedUrl);
+  };
+
   const handleGenerate = () => {
     mutation.mutate({ action, text, options });
   };
@@ -242,6 +270,10 @@ export default function ComposePage() {
         onGenerate={handleGenerate}
         onClear={handleClear}
         onPaste={handlePaste}
+        articleUrl={articleUrl}
+        onArticleUrlChange={setArticleUrl}
+        onImportUrl={handleImportUrl}
+        isImportingUrl={urlImportMutation.isPending}
         isLoading={mutation.isPending}
         isGenerateDisabled={!canGenerate || mutation.isPending}
         remainingChars={remainingChars}
