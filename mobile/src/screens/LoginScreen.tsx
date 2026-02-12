@@ -54,6 +54,13 @@ export function LoginScreen() {
   );
 
   const onSubmit = async (values: FormValues) => {
+    // eslint-disable-next-line no-console
+    console.log("[auth][login] onSubmit triggered", {
+      email: values.email,
+      passwordLength: values.password.length,
+      apiUrl,
+    });
+
     setError("");
 
     const requestPayload = {
@@ -62,9 +69,21 @@ export function LoginScreen() {
     };
 
     try {
+      // eslint-disable-next-line no-console
+      console.log("[auth][login] calling login API", {
+        email: requestPayload.email,
+      });
       const data = await login(requestPayload);
+      // eslint-disable-next-line no-console
+      console.log("[auth][login] login API success", {
+        hasToken: Boolean(data?.token),
+      });
       await signIn(data.token);
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log("[auth][login] login API failed", {
+        message: (err as Error)?.message,
+      });
       setError(
         (err as Error).message ||
           "Login failed. Please check your credentials and try again.",
@@ -122,7 +141,11 @@ export function LoginScreen() {
       <Button
         label={isSubmitting ? "Signing in..." : "Login"}
         disabled={isSubmitting}
-        onPress={handleSubmit(onSubmit, onInvalid)}
+        onPress={() => {
+          // eslint-disable-next-line no-console
+          console.log("[auth][login] login button pressed");
+          return handleSubmit(onSubmit, onInvalid)();
+        }}
       />
       {isSubmitting ? (
         <Text
