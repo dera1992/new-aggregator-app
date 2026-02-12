@@ -11,6 +11,13 @@ import {
 } from '@/lib/api/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingState } from '@/components/loading-state';
@@ -19,6 +26,15 @@ import { EmptyState } from '@/components/empty-state';
 import { PaginationControls } from '@/components/pagination-controls';
 import { Badge } from '@/components/ui/badge';
 import { getToken } from '@/lib/auth/token';
+
+const feedCategoryOptions = [
+  'All categories',
+  'Tech',
+  'Business',
+  'Sports',
+  'Politics',
+  'Lifestyle',
+] as const;
 
 const defaultFilters: FeedQuery = {
   category: '',
@@ -255,12 +271,23 @@ export default function FeedPage() {
           <CardTitle className="break-words">Filters</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Input
-            className="w-full"
-            placeholder="Category"
-            value={filters.category}
-            onChange={(event) => updateFilter('category', event.target.value)}
-          />
+          <Select
+            value={filters.category || 'All categories'}
+            onValueChange={(value) =>
+              updateFilter('category', value === 'All categories' ? '' : value)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {feedCategoryOptions.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             className="w-full"
             placeholder="Source"

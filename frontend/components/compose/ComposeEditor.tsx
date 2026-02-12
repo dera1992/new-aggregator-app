@@ -8,12 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 
-export type ComposeAction = 'summary' | 'analysis' | 'joke' | 'viral' | 'comment';
+export type ComposeAction =
+  | 'summary'
+  | 'analysis'
+  | 'joke'
+  | 'viral'
+  | 'comment';
 
 export type SummaryOptions = {
   style: 'short' | 'standard' | 'detailed';
@@ -64,6 +75,57 @@ export type ComposeOptions = {
   comment: CommentOptions;
 };
 
+const jokeAudienceOptions = [
+  'General audience',
+  'Students',
+  'Young professionals',
+  'Startup founders',
+  'Tech enthusiasts',
+  'Business leaders',
+] as const;
+
+const viralToneOptions = [
+  'punchy',
+  'bold',
+  'friendly',
+  'professional',
+  'funny',
+  'controversial_light',
+] as const;
+
+const viralGoalOptions = [
+  'engagement',
+  'clicks',
+  'followers',
+  'thought_leadership',
+] as const;
+
+const viralAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Marketers',
+  'Developers',
+  'Executives',
+  'Investors',
+] as const;
+
+const viralBrandVoiceOptions = [
+  'clear and confident',
+  'bold and direct',
+  'professional and credible',
+  'friendly and conversational',
+  'witty and playful',
+] as const;
+
+const commentAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 type ComposeEditorProps = {
   text: string;
   onTextChange: (value: string) => void;
@@ -74,8 +136,13 @@ type ComposeEditorProps = {
   onGenerate: () => void;
   onClear: () => void;
   onPaste: () => void;
+  articleUrl: string;
+  onArticleUrlChange: (value: string) => void;
+  onImportUrl: () => void;
+  isImportingUrl: boolean;
   isLoading: boolean;
   isGenerateDisabled: boolean;
+  remainingChars: number;
 };
 
 export function ComposeEditor({
@@ -88,8 +155,13 @@ export function ComposeEditor({
   onGenerate,
   onClear,
   onPaste,
+  articleUrl,
+  onArticleUrlChange,
+  onImportUrl,
+  isImportingUrl,
   isLoading,
   isGenerateDisabled,
+  remainingChars,
 }: ComposeEditorProps) {
   const charCount = text.length;
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
@@ -130,12 +202,27 @@ export function ComposeEditor({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="article-url">Article URL (optional)</Label>
-          <Input
-            id="article-url"
-            disabled
-            placeholder="URL fetching coming soon"
-          />
+          <Label htmlFor="article-url">Article or YouTube URL (optional)</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="article-url"
+              value={articleUrl}
+              onChange={(event) => onArticleUrlChange(event.target.value)}
+              placeholder="https://example.com/article or https://www.youtube.com/watch?v=..."
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onImportUrl}
+              disabled={isImportingUrl}
+            >
+              {isImportingUrl ? 'Importing...' : 'Import URL'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Supports standard article links and YouTube videos with available
+            captions.
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -165,7 +252,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      summary: { ...prev.summary, style: value as SummaryOptions['style'] },
+                      summary: {
+                        ...prev.summary,
+                        style: value as SummaryOptions['style'],
+                      },
                     }))
                   }
                 >
@@ -188,7 +278,10 @@ export function ComposeEditor({
                   onChange={(event) =>
                     setOptions((prev) => ({
                       ...prev,
-                      summary: { ...prev.summary, maxLength: event.target.value },
+                      summary: {
+                        ...prev.summary,
+                        maxLength: event.target.value,
+                      },
                     }))
                   }
                   placeholder="Optional"
@@ -207,7 +300,10 @@ export function ComposeEditor({
                     onValueChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, format: value as AnalysisOptions['format'] },
+                        analysis: {
+                          ...prev.analysis,
+                          format: value as AnalysisOptions['format'],
+                        },
                       }))
                     }
                   >
@@ -228,7 +324,10 @@ export function ComposeEditor({
                     onValueChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, tone: value as AnalysisOptions['tone'] },
+                        analysis: {
+                          ...prev.analysis,
+                          tone: value as AnalysisOptions['tone'],
+                        },
                       }))
                     }
                   >
@@ -274,7 +373,9 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include takeaways</Label>
-                    <p className="text-xs text-muted-foreground">Actionable bullet points.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Actionable bullet points.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeTakeaways}
@@ -289,14 +390,19 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include counterpoints</Label>
-                    <p className="text-xs text-muted-foreground">Alternative viewpoints.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Alternative viewpoints.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeCounterpoints}
                     onCheckedChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, includeCounterpoints: value },
+                        analysis: {
+                          ...prev.analysis,
+                          includeCounterpoints: value,
+                        },
                       }))
                     }
                   />
@@ -304,14 +410,19 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Include what to watch</Label>
-                    <p className="text-xs text-muted-foreground">Upcoming signals.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Upcoming signals.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.includeWhatToWatch}
                     onCheckedChange={(value) =>
                       setOptions((prev) => ({
                         ...prev,
-                        analysis: { ...prev.analysis, includeWhatToWatch: value },
+                        analysis: {
+                          ...prev.analysis,
+                          includeWhatToWatch: value,
+                        },
                       }))
                     }
                   />
@@ -319,7 +430,9 @@ export function ComposeEditor({
                 <div className="flex items-center justify-between rounded-md border border-border p-3">
                   <div>
                     <Label>Fact mode</Label>
-                    <p className="text-xs text-muted-foreground">Stick to pasted facts.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Stick to pasted facts.
+                    </p>
                   </div>
                   <Switch
                     checked={options.analysis.factMode}
@@ -344,7 +457,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      joke: { ...prev.joke, platform: value as JokeOptions['platform'] },
+                      joke: {
+                        ...prev.joke,
+                        platform: value as JokeOptions['platform'],
+                      },
                     }))
                   }
                 >
@@ -367,7 +483,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      joke: { ...prev.joke, style: value as JokeOptions['style'] },
+                      joke: {
+                        ...prev.joke,
+                        style: value as JokeOptions['style'],
+                      },
                     }))
                   }
                 >
@@ -384,17 +503,27 @@ export function ComposeEditor({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Audience (optional)</Label>
-                <Input
+                <Label>Audience</Label>
+                <Select
                   value={options.joke.audience}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      joke: { ...prev.joke, audience: event.target.value },
+                      joke: { ...prev.joke, audience: value },
                     }))
                   }
-                  placeholder="e.g. startup founders"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jokeAudienceOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Max variants</Label>
@@ -417,7 +546,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Humor grounded in facts.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Humor grounded in facts.
+                  </p>
                 </div>
                 <Switch
                   checked={options.joke.factMode}
@@ -441,7 +572,10 @@ export function ComposeEditor({
                   onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, platform: value as ViralOptions['platform'] },
+                      viral: {
+                        ...prev.viral,
+                        platform: value as ViralOptions['platform'],
+                      },
                     }))
                   }
                 >
@@ -457,55 +591,95 @@ export function ComposeEditor({
               </div>
               <div className="space-y-2">
                 <Label>Tone</Label>
-                <Input
+                <Select
                   value={options.viral.tone}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, tone: event.target.value },
+                      viral: { ...prev.viral, tone: value },
                     }))
                   }
-                  placeholder="e.g. punchy, authoritative"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {viralToneOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option.replaceAll('_', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Goal</Label>
-                <Input
+                <Select
                   value={options.viral.goal}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, goal: event.target.value },
+                      viral: { ...prev.viral, goal: value },
                     }))
                   }
-                  placeholder="e.g. drive newsletter signups"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {viralGoalOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option.replaceAll('_', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Audience</Label>
-                <Input
+                <Select
                   value={options.viral.audience}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, audience: event.target.value },
+                      viral: { ...prev.viral, audience: value },
                     }))
                   }
-                  placeholder="e.g. tech leaders"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {viralAudienceOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Brand voice</Label>
-                <Input
+                <Select
                   value={options.viral.brandVoice}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      viral: { ...prev.viral, brandVoice: event.target.value },
+                      viral: { ...prev.viral, brandVoice: value },
                     }))
                   }
-                  placeholder="e.g. bold, optimistic"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select brand voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {viralBrandVoiceOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Max variants</Label>
@@ -528,7 +702,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Keep claims grounded.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Keep claims grounded.
+                  </p>
                 </div>
                 <Switch
                   checked={options.viral.factMode}
@@ -598,16 +774,29 @@ export function ComposeEditor({
               </div>
               <div className="space-y-2">
                 <Label>Audience</Label>
-                <Input
+                <Select
                   value={options.comment.audience}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     setOptions((prev) => ({
                       ...prev,
-                      comment: { ...prev.comment, audience: event.target.value },
+                      comment: {
+                        ...prev.comment,
+                        audience: value,
+                      },
                     }))
                   }
-                  placeholder="e.g. fintech community"
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {commentAudienceOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Max variants</Label>
@@ -630,7 +819,9 @@ export function ComposeEditor({
               <div className="flex items-center justify-between rounded-md border border-border p-3 md:col-span-2">
                 <div>
                   <Label>Fact mode</Label>
-                  <p className="text-xs text-muted-foreground">Keep it accurate.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Keep it accurate.
+                  </p>
                 </div>
                 <Switch
                   checked={options.comment.factMode}
@@ -646,16 +837,28 @@ export function ComposeEditor({
           )}
         </div>
 
-        <Button
-          type="button"
-          size="lg"
-          onClick={onGenerate}
-          disabled={isGenerateDisabled}
-          className="mt-auto"
-        >
-          <Rocket className="h-4 w-4" />
-          {isLoading ? 'Generating...' : 'Generate'}
-        </Button>
+        <div className="space-y-1">
+          <Button
+            type="button"
+            size="lg"
+            onClick={onGenerate}
+            disabled={isGenerateDisabled}
+            title={
+              remainingChars > 0
+                ? `Add ${remainingChars} more character${remainingChars === 1 ? '' : 's'} to enable Generate.`
+                : undefined
+            }
+          >
+            <Rocket className="h-4 w-4" />
+            {isLoading ? 'Generating...' : 'Generate'}
+          </Button>
+          {remainingChars > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Add {remainingChars} more character
+              {remainingChars === 1 ? '' : 's'} to enable Generate.
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
