@@ -85,3 +85,19 @@ npm run dev
 If you prefer pnpm, install it first (`npm install -g pnpm`) and then run `pnpm install` and `pnpm dev`.
 
 The frontend reads `NEXT_PUBLIC_API_URL` from `.env.local` to reach the Flask API.
+
+## AI Caching Notes
+
+AI generation endpoints now use a shared cache key shape:
+
+- `task_type` (comment/joke/viral_post/analysis/perspective)
+- resolved `model`
+- `prompt_version`
+- `params_hash` (SHA-256 hash of sorted request parameters)
+- `input_hash` (SHA-256 hash of the input text used for generation)
+
+A matching non-expired entry is returned immediately; otherwise the generator runs and the result is stored with task-specific TTL.
+
+### Cache invalidation with `force_refresh`
+
+For AI generation requests, you can pass `force_refresh: true` in the request payload to bypass a cache hit and generate a fresh response. The fresh output is then written back into cache under the same key.

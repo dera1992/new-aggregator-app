@@ -13,3 +13,4 @@ class AnalysisRequest(BaseModel):
     include_what_to_watch: bool = True
     fact_mode: bool = True
     model: Optional[str] = None
+    force_refresh: bool = False

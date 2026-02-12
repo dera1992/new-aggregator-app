@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Blueprint, jsonify, request, g
 from pydantic import ValidationError
-from models.models import Article, SavedArticle, ReadArticle, StoryInsight, UserPreferences, db
+from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
 from schemas.comment import CommentRequest
 from schemas.analysis import AnalysisRequest
 from schemas.joke import JokeRequest
@@ -14,6 +14,7 @@ from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
 from services.perspective_generator import generate_perspective, PerspectiveError
 from services.summary_generator import generate_summary, SummaryGenError
+from services.ai_router import PROMPT_VERSIONS, run_task
 from services.url_text_extractor import extract_text_from_url, URLExtractError
 from utils.decorators import token_required
 
@@ -217,36 +218,30 @@ def generate_perspective_endpoint():
     except ValidationError as exc:
         return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
 
-    now = datetime.utcnow()
-    if not request_data.force_refresh:
-        cached = StoryInsight.query.filter_by(cluster_id=request_data.cluster_id).first()
-        if cached and cached.expires_at and cached.expires_at > now:
-            return jsonify(cached.perspective_json)
-
     try:
-        result = generate_perspective(
+        routed = run_task(
+            "perspective",
+            user_id=g.current_user.id,
             cluster_id=request_data.cluster_id,
-            tone=request_data.tone,
-            slang_level=request_data.slang_level,
+            input_text=f"cluster:{request_data.cluster_id}",
+            params={"tone": request_data.tone, "slang_level": request_data.slang_level},
+            model="gpt-4o-mini",
+            prompt_version=PROMPT_VERSIONS["perspective"],
+            ttl_hours=12,
+            force_refresh=request_data.force_refresh,
+            generator_fn=lambda **_kw: generate_perspective(
+                cluster_id=request_data.cluster_id,
+                tone=request_data.tone,
+                slang_level=request_data.slang_level,
+            ),
         )
     except PerspectiveError as exc:
         message = str(exc)
         status = 404 if message == "Story not found." else 502
         return jsonify({"message": message}), status
 
-    insight = StoryInsight.query.filter_by(cluster_id=request_data.cluster_id).first()
-    if insight is None:
-        insight = StoryInsight(cluster_id=request_data.cluster_id)
-        db.session.add(insight)
-
-    insight.perspective_json = result
-    insight.expires_at = now + timedelta(hours=12)
-    insight.updated_at = now
-    insight.model_version = "perspective_v1"
-
-    db.session.commit()
-
-    return jsonify(result)
+    response = {k: v for k, v in routed.items() if k != "cache_hit"}
+    return jsonify(response)
 
 
 @news_bp.route("/api/news/save", methods=["POST"])
@@ -380,12 +375,36 @@ def generate_viral_post_endpoint():
     except ValidationError as exc:
         return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
 
+    request_payload = request_data.model_dump()
+    force_refresh = request_payload.pop("force_refresh", False)
+
+    params = {
+        "platform": request_payload["platform"],
+        "tone": request_payload["tone"],
+        "goal": request_payload["goal"],
+        "audience": request_payload["audience"],
+        "brand_voice": request_payload["brand_voice"],
+        "max_variants": request_payload["max_variants"],
+        "fact_mode": request_payload["fact_mode"],
+    }
+
     try:
-        result = generate_viral_post(**request_data.model_dump())
+        routed = run_task(
+            "viral_post",
+            user_id=g.current_user.id,
+            input_text=request_payload["summary"],
+            params=params,
+            model="gpt-4o-mini",
+            prompt_version=PROMPT_VERSIONS["viral_post"],
+            ttl_hours=48,
+            force_refresh=force_refresh,
+            generator_fn=lambda **_kw: generate_viral_post(**request_payload),
+        )
     except ViralPostError as exc:
         return jsonify({"message": str(exc)}), 502
 
-    return jsonify(result)
+    response = {k: v for k, v in routed.items() if k != "cache_hit"}
+    return jsonify(response)
 
 
 @news_bp.route("/api/news/generate-comment", methods=["POST"])
@@ -417,12 +436,34 @@ def generate_comment_endpoint():
     except ValidationError as exc:
         return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
 
+    request_payload = request_data.model_dump()
+    force_refresh = request_payload.pop("force_refresh", False)
+
+    params = {
+        "platform": request_payload["platform"],
+        "style": request_payload["style"],
+        "audience": request_payload["audience"],
+        "max_variants": request_payload["max_variants"],
+        "fact_mode": request_payload["fact_mode"],
+    }
+
     try:
-        result = generate_comment(**request_data.model_dump())
+        routed = run_task(
+            "comment",
+            user_id=g.current_user.id,
+            input_text=request_payload["summary"],
+            params=params,
+            model="gpt-4o-mini",
+            prompt_version=PROMPT_VERSIONS["comment"],
+            ttl_hours=24,
+            force_refresh=force_refresh,
+            generator_fn=lambda **_kw: generate_comment(**request_payload),
+        )
     except CommentGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
-    return jsonify(result)
+    response = {k: v for k, v in routed.items() if k != "cache_hit"}
+    return jsonify(response)
 
 
 @news_bp.route("/api/news/generate-joke", methods=["POST"])
@@ -454,12 +495,35 @@ def generate_joke_endpoint():
     except ValidationError as exc:
         return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
 
+    request_payload = request_data.model_dump()
+    force_refresh = request_payload.pop("force_refresh", False)
+    selected_model = request_payload.get("model") or "gpt-4o-mini"
+
+    params = {
+        "platform": request_payload["platform"],
+        "style": request_payload["style"],
+        "audience": request_payload["audience"],
+        "max_variants": request_payload["max_variants"],
+        "fact_mode": request_payload["fact_mode"],
+    }
+
     try:
-        result = generate_joke(**request_data.model_dump())
+        routed = run_task(
+            "joke",
+            user_id=g.current_user.id,
+            input_text=request_payload["summary"],
+            params=params,
+            model=selected_model,
+            prompt_version=PROMPT_VERSIONS["joke"],
+            ttl_hours=24,
+            force_refresh=force_refresh,
+            generator_fn=lambda **_kw: generate_joke(**request_payload),
+        )
     except JokeGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
-    return jsonify(result)
+    response = {k: v for k, v in routed.items() if k != "cache_hit"}
+    return jsonify(response)
 
 
 @news_bp.route("/api/news/generate-analysis", methods=["POST"])
@@ -491,12 +555,37 @@ def generate_analysis_endpoint():
     except ValidationError as exc:
         return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
 
+    request_payload = request_data.model_dump()
+    force_refresh = request_payload.pop("force_refresh", False)
+    selected_model = request_payload.get("model") or "gpt-4o-mini"
+
+    params = {
+        "format": request_payload["format"],
+        "tone": request_payload["tone"],
+        "audience": request_payload["audience"],
+        "include_takeaways": request_payload["include_takeaways"],
+        "include_counterpoints": request_payload["include_counterpoints"],
+        "include_what_to_watch": request_payload["include_what_to_watch"],
+        "fact_mode": request_payload["fact_mode"],
+    }
+
     try:
-        result = generate_analysis(**request_data.model_dump())
+        routed = run_task(
+            "analysis",
+            user_id=g.current_user.id,
+            input_text=request_payload["summary"],
+            params=params,
+            model=selected_model,
+            prompt_version=PROMPT_VERSIONS["analysis"],
+            ttl_hours=12,
+            force_refresh=force_refresh,
+            generator_fn=lambda **_kw: generate_analysis(**request_payload),
+        )
     except AnalysisGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
-    return jsonify(result)
+    response = {k: v for k, v in routed.items() if k != "cache_hit"}
+    return jsonify(response)
 
 
 @news_bp.route("/api/news/extract-url-text", methods=["POST"])

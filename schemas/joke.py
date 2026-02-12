@@ -17,3 +17,4 @@ class JokeRequest(BaseModel):
     max_variants: int = Field(3, ge=1, le=5)
     fact_mode: bool = True
     model: Optional[str] = None
+    force_refresh: bool = False

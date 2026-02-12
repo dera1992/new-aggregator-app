@@ -101,3 +101,30 @@ class StoryInsight(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(hours=12))
     model_version = db.Column(db.String(50), default="perspective_v1", nullable=False)
+
+
+class AIOutputCache(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    article_id = db.Column(db.Integer, nullable=True)
+    cluster_id = db.Column(db.Integer, nullable=True)
+    task_type = db.Column(db.String(64), nullable=False, index=True)
+    model = db.Column(db.String(64), nullable=False)
+    prompt_version = db.Column(db.String(32), nullable=False)
+    params_hash = db.Column(db.String(64), nullable=False, index=True)
+    input_hash = db.Column(db.String(64), nullable=False, index=True)
+    output_json = db.Column(db.JSON().with_variant(JSONB, "postgresql"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "task_type",
+            "model",
+            "prompt_version",
+            "params_hash",
+            "input_hash",
+            name="uniq_ai_output_cache_key",
+        ),
+    )
