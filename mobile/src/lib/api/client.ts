@@ -46,6 +46,13 @@ apiClient.interceptors.request.use(async (config) => {
     url: config.url,
   });
 
+  const requestUrl = String(config.url ?? '');
+  const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
+
+  if (isAuthEndpoint) {
+    return config;
+  }
+
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
