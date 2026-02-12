@@ -125,64 +125,79 @@ export default function ArchivePage() {
           )}
           {archiveQuery.data && archiveQuery.data.articles.length > 0 && (
             <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b text-muted-foreground">
-                    <tr>
-                      <th className="py-2">Title</th>
-                      <th className="py-2">Category</th>
-                      <th className="py-2">Source</th>
-                      <th className="py-2">Timestamp</th>
-                      <th className="py-2">Cluster</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {archiveQuery.data.articles.map((article, index) => (
-                      <tr
-                        key={`${article.title}-${index}`}
-                        className="border-b"
-                      >
-                        <td className="py-3 font-medium break-words">
-                          <a
-                            href={article.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {article.title}
-                          </a>
-                        </td>
-                        <td className="py-3">{article.category}</td>
-                        <td className="py-3">{article.source}</td>
-                        <td className="py-3">
-                          {new Date(article.timestamp).toLocaleString()}
-                        </td>
-                        <td className="py-3">
-                          {article.cluster_id ? (
-                            <Link
-                              href={`/story/${article.cluster_id}`}
-                              className="text-primary hover:underline"
+              {(() => {
+                const hasPotentialNext =
+                  archiveQuery.data.articles.length >= archiveQuery.data.limit;
+                const effectiveTotal = Math.max(
+                  archiveQuery.data.count,
+                  archiveQuery.data.offset +
+                    archiveQuery.data.articles.length +
+                    (hasPotentialNext ? 1 : 0),
+                );
+
+                return (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="border-b text-muted-foreground">
+                          <tr>
+                            <th className="py-2">Title</th>
+                            <th className="py-2">Category</th>
+                            <th className="py-2">Source</th>
+                            <th className="py-2">Timestamp</th>
+                            <th className="py-2">Cluster</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {archiveQuery.data.articles.map((article, index) => (
+                            <tr
+                              key={`${article.title}-${index}`}
+                              className="border-b"
                             >
-                              View story
-                            </Link>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {/* TODO: API should return article_id to enable save/read actions. */}
-              <PaginationControls
-                limit={archiveQuery.data.limit}
-                offset={archiveQuery.data.offset}
-                total={archiveQuery.data.count}
-                onPageChange={(nextOffset) =>
-                  updateFilter('offset', nextOffset)
-                }
-              />
+                              <td className="py-3 font-medium break-words">
+                                <a
+                                  href={article.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary hover:underline"
+                                >
+                                  {article.title}
+                                </a>
+                              </td>
+                              <td className="py-3">{article.category}</td>
+                              <td className="py-3">{article.source}</td>
+                              <td className="py-3">
+                                {new Date(article.timestamp).toLocaleString()}
+                              </td>
+                              <td className="py-3">
+                                {article.cluster_id ? (
+                                  <Link
+                                    href={`/story/${article.cluster_id}`}
+                                    className="text-primary hover:underline"
+                                  >
+                                    View story
+                                  </Link>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* TODO: API should return article_id to enable save/read actions. */}
+                    <PaginationControls
+                      limit={archiveQuery.data.limit}
+                      offset={archiveQuery.data.offset}
+                      total={effectiveTotal}
+                      onPageChange={(nextOffset) =>
+                        updateFilter('offset', nextOffset)
+                      }
+                    />
+                  </>
+                );
+              })()}
             </div>
           )}
         </CardContent>
