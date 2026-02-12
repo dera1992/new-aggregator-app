@@ -160,6 +160,7 @@ def get_news_archive():
         except ValueError:
             return jsonify({"message": "Invalid 'before' format. Use ISO-8601."}), 400
 
+    total_count = query.count()
     articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()
 
     return jsonify({
@@ -176,7 +177,7 @@ def get_news_archive():
             }
             for a in articles
         ],
-        "count": len(articles),
+        "count": total_count,
         "offset": offset,
         "limit": limit,
     })

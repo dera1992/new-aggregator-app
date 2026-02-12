@@ -7,10 +7,26 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchArchive, type ArchiveQuery } from '@/lib/api/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { LoadingState } from '@/components/loading-state';
 import { ErrorState } from '@/components/error-state';
 import { EmptyState } from '@/components/empty-state';
 import { PaginationControls } from '@/components/pagination-controls';
+
+const categoryOptions = [
+  'All categories',
+  'Tech',
+  'Business',
+  'Sports',
+  'Politics',
+  'Lifestyle',
+] as const;
 
 const defaultFilters: ArchiveQuery = {
   category: '',
@@ -29,7 +45,11 @@ export default function ArchivePage() {
   });
 
   const updateFilter = (key: keyof ArchiveQuery, value: string | number) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === 'offset' ? {} : { offset: 0 }),
+    }));
   };
 
   return (
@@ -39,12 +59,23 @@ export default function ArchivePage() {
           <CardTitle className="break-words">Archive Filters</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Input
-            className="w-full"
-            placeholder="Category"
-            value={filters.category}
-            onChange={(event) => updateFilter('category', event.target.value)}
-          />
+          <Select
+            value={filters.category || 'All categories'}
+            onValueChange={(value) =>
+              updateFilter('category', value === 'All categories' ? '' : value)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryOptions.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             className="w-full"
             placeholder="Source"
@@ -63,7 +94,9 @@ export default function ArchivePage() {
             min={1}
             placeholder="Limit"
             value={filters.limit}
-            onChange={(event) => updateFilter('limit', Number(event.target.value))}
+            onChange={(event) =>
+              updateFilter('limit', Number(event.target.value))
+            }
           />
           <Input
             className="w-full"
@@ -71,7 +104,9 @@ export default function ArchivePage() {
             min={0}
             placeholder="Offset"
             value={filters.offset}
-            onChange={(event) => updateFilter('offset', Number(event.target.value))}
+            onChange={(event) =>
+              updateFilter('offset', Number(event.target.value))
+            }
           />
         </CardContent>
       </Card>
@@ -103,7 +138,10 @@ export default function ArchivePage() {
                   </thead>
                   <tbody>
                     {archiveQuery.data.articles.map((article, index) => (
-                      <tr key={`${article.title}-${index}`} className="border-b">
+                      <tr
+                        key={`${article.title}-${index}`}
+                        className="border-b"
+                      >
                         <td className="py-3 font-medium break-words">
                           <a
                             href={article.url}
@@ -141,7 +179,9 @@ export default function ArchivePage() {
                 limit={archiveQuery.data.limit}
                 offset={archiveQuery.data.offset}
                 total={archiveQuery.data.count}
-                onPageChange={(nextOffset) => updateFilter('offset', nextOffset)}
+                onPageChange={(nextOffset) =>
+                  updateFilter('offset', nextOffset)
+                }
               />
             </div>
           )}
