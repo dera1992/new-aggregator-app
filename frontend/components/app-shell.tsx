@@ -16,7 +16,12 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -51,7 +56,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen overflow-x-hidden bg-background">
       <div className="flex min-h-screen min-w-0">
         <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 lg:flex">
-          <div className="mb-6 text-lg font-semibold">News Aggregator</div>
+          <Link
+            href="/"
+            className="mb-6 text-lg font-semibold hover:text-primary"
+          >
+            News Aggregator
+          </Link>
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -79,8 +89,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <span className="sr-only">Open navigation</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-[280px] max-w-[85vw] p-6">
-                    <div className="mb-6 text-lg font-semibold">News Aggregator</div>
+                  <SheetContent
+                    side="left"
+                    className="w-[280px] max-w-[85vw] p-6"
+                  >
+                    <SheetClose asChild>
+                      <Link
+                        href="/"
+                        className="mb-6 text-lg font-semibold hover:text-primary"
+                      >
+                        News Aggregator
+                      </Link>
+                    </SheetClose>
                     <nav className="flex flex-col gap-2">
                       {navItems.map((item) => {
                         const Icon = item.icon;
@@ -88,7 +108,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           <SheetClose asChild key={item.href}>
                             <Link
                               href={item.href}
-                              className={navLinkClassName(pathname === item.href)}
+                              className={navLinkClassName(
+                                pathname === item.href,
+                              )}
                             >
                               <Icon className="h-4 w-4" />
                               {item.label}
@@ -99,10 +121,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </nav>
                   </SheetContent>
                 </Sheet>
-                <span className="text-lg font-semibold lg:hidden">News Aggregator</span>
+                <Link
+                  href="/"
+                  className="text-lg font-semibold hover:text-primary lg:hidden"
+                >
+                  News Aggregator
+                </Link>
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-semibold lg:text-lg">
-                    {navItems.find((item) => item.href === pathname)?.label ?? 'Dashboard'}
+                    {navItems.find((item) => item.href === pathname)?.label ??
+                      'Dashboard'}
                   </h1>
                   <p className="hidden truncate text-sm text-muted-foreground lg:block">
                     Stay on top of the news in one place.
