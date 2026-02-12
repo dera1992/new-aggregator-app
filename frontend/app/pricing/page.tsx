@@ -43,7 +43,14 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <main className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+      <Button
+        asChild
+        variant="outline"
+        className="absolute left-4 top-6 sm:left-6 lg:left-8"
+      >
+        <Link href="/">← Back to Home</Link>
+      </Button>
       <div className="mx-auto max-w-3xl text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
           Pricing
@@ -89,9 +96,6 @@ export default function PricingPage() {
       <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
         <Button asChild className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]">
           <Link href="/register">Start Free Trial</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/">Back to Home</Link>
         </Button>
       </div>
     </main>

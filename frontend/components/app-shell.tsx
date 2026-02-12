@@ -28,10 +28,10 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/feed', label: 'Feed', icon: Newspaper },
+  { href: '/compose', label: 'Compose', icon: PenSquare },
   { href: '/archive', label: 'Archive', icon: Archive },
   { href: '/saved', label: 'Saved', icon: Bookmark },
   { href: '/read', label: 'Read', icon: CheckCircle2 },
-  { href: '/compose', label: 'Compose', icon: PenSquare },
   { href: '/preferences', label: 'Preferences', icon: SlidersHorizontal },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/admin', label: 'Admin', icon: Shield },
@@ -139,6 +139,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle />
+                <Button
+                  asChild
+                  className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]"
+                >
+                  <Link href="/compose">Get Started</Link>
+                </Button>
                 <Button variant="outline" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   Logout
