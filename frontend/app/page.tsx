@@ -34,7 +34,8 @@ const features = [
   },
   {
     title: 'Analysis',
-    description: 'Dive deeper with insights and sentiment analysis for stories.',
+    description:
+      'Dive deeper with insights and sentiment analysis for stories.',
   },
   {
     title: 'Comment Generation',
@@ -60,7 +61,10 @@ export default function HomePage() {
       id="home"
       className="relative min-h-screen overflow-hidden bg-[#F5F5F5] text-[#333333] dark:bg-slate-950 dark:text-slate-100"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+      >
         <div className="absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#4A90E2]/15 blur-3xl dark:bg-sky-500/20" />
         <div className="absolute bottom-0 right-0 h-80 w-80 translate-x-1/3 rounded-full bg-[#FF6600]/10 blur-3xl dark:bg-orange-500/20" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(74,144,226,0.08),_transparent_55%)] dark:bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.12),_transparent_55%)]" />
@@ -89,13 +93,21 @@ export default function HomePage() {
           <div className="hidden items-center gap-3 md:flex">
             <ThemeToggle />
             {isAuthenticated ? (
-              <Button
-                variant="outline"
-                className="border-[#4A90E2] text-[#4A90E2] hover:bg-[#4A90E2] hover:text-white"
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  asChild
+                  className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]"
+                >
+                  <Link href="/compose">Get Started</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-[#4A90E2] text-[#4A90E2] hover:bg-[#4A90E2] hover:text-white"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Button
@@ -121,7 +133,11 @@ export default function HomePage() {
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-label="Toggle navigation menu"
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
 
@@ -141,13 +157,21 @@ export default function HomePage() {
               <div className="flex items-center gap-3">
                 <ThemeToggle />
                 {isAuthenticated ? (
-                  <Button
-                    variant="outline"
-                    className="border-[#4A90E2] text-[#4A90E2] hover:bg-[#4A90E2] hover:text-white"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      asChild
+                      className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]"
+                    >
+                      <Link href="/compose">Get Started</Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-[#4A90E2] text-[#4A90E2] hover:bg-[#4A90E2] hover:text-white"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Button>
+                  </div>
                 ) : (
                   <>
                     <Button
@@ -184,7 +208,10 @@ export default function HomePage() {
             insights, and content tools to keep your audience engaged.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Button asChild className="bg-[#FF6600] px-8 text-white hover:bg-[#ff7a1a]">
+            <Button
+              asChild
+              className="bg-[#FF6600] px-8 text-white hover:bg-[#ff7a1a]"
+            >
               <Link href="/feed">Get Started</Link>
             </Button>
             <Button
@@ -206,10 +233,12 @@ export default function HomePage() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
                 Features
               </p>
-              <h2 className="mt-3 text-3xl font-semibold">Everything you need in one hub</h2>
+              <h2 className="mt-3 text-3xl font-semibold">
+                Everything you need in one hub
+              </h2>
               <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-                Streamline news monitoring, content creation, and engagement with tools
-                built for modern teams.
+                Streamline news monitoring, content creation, and engagement
+                with tools built for modern teams.
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -235,13 +264,18 @@ export default function HomePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
               Pricing
             </p>
-            <h2 className="mt-3 text-3xl font-semibold">Flexible plans for every team</h2>
+            <h2 className="mt-3 text-3xl font-semibold">
+              Flexible plans for every team
+            </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-              Choose a plan that scales with your newsroom. Start free and upgrade when
-              you are ready.
+              Choose a plan that scales with your newsroom. Start free and
+              upgrade when you are ready.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button asChild className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]">
+              <Button
+                asChild
+                className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]"
+              >
                 <Link href="/register">Start Free Trial</Link>
               </Button>
               <Button
@@ -263,11 +297,13 @@ export default function HomePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
               About
             </p>
-            <h2 className="mt-3 text-3xl font-semibold">Built for fast-moving newsrooms</h2>
+            <h2 className="mt-3 text-3xl font-semibold">
+              Built for fast-moving newsrooms
+            </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-              We help journalists, analysts, and creators monitor global stories,
-              summarize key developments, and generate content that keeps audiences
-              informed.
+              We help journalists, analysts, and creators monitor global
+              stories, summarize key developments, and generate content that
+              keeps audiences informed.
             </p>
           </div>
         </section>

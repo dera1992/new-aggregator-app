@@ -6,7 +6,7 @@ from schemas.comment import CommentRequest
 from schemas.analysis import AnalysisRequest
 from schemas.joke import JokeRequest
 from schemas.viral_post import ViralPostRequest
-from schemas.paste import PasteTextRequest, SummaryRequest
+from schemas.paste import PasteTextRequest, SummaryRequest, URLRequest
 from schemas.perspective import PerspectiveRequest
 from services.comment_generator import generate_comment, CommentGenError
 from services.analysis_generator import generate_analysis, AnalysisGenError
@@ -14,6 +14,7 @@ from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
 from services.perspective_generator import generate_perspective, PerspectiveError
 from services.summary_generator import generate_summary, SummaryGenError
+from services.url_text_extractor import extract_text_from_url, URLExtractError
 from utils.decorators import token_required
 
 # Define the Blueprint
@@ -159,6 +160,7 @@ def get_news_archive():
         except ValueError:
             return jsonify({"message": "Invalid 'before' format. Use ISO-8601."}), 400
 
+    total_count = query.count()
     articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()
 
     return jsonify({
@@ -175,7 +177,7 @@ def get_news_archive():
             }
             for a in articles
         ],
-        "count": len(articles),
+        "count": total_count,
         "offset": offset,
         "limit": limit,
     })
@@ -495,6 +497,29 @@ def generate_analysis_endpoint():
         return jsonify({"message": str(exc)}), 502
 
     return jsonify(result)
+
+
+@news_bp.route("/api/news/extract-url-text", methods=["POST"])
+@token_required
+def extract_url_text_endpoint():
+    payload = request.get_json(silent=True) or {}
+    try:
+        request_data = URLRequest.model_validate(payload)
+    except ValidationError as exc:
+        return jsonify({"message": "Invalid request payload.", "errors": exc.errors()}), 400
+
+    try:
+        result = extract_text_from_url(str(request_data.url))
+    except URLExtractError as exc:
+        return jsonify({"message": str(exc)}), 400
+    except Exception:
+        return jsonify({"message": "Unable to fetch or parse this URL right now."}), 502
+
+    return jsonify({
+        "url": str(request_data.url),
+        "text": result["text"],
+        "source_type": result["source_type"],
+    })
 
 
 @news_bp.route("/api/news/generate-summary", methods=["POST"])
