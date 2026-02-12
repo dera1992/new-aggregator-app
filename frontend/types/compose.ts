@@ -1,4 +1,9 @@
-import type { GenerateAnalysisRequest, GenerateJokeRequest, JokePlatform, JokeStyle } from '@/types/news';
+import type {
+  GenerateAnalysisRequest,
+  GenerateJokeRequest,
+  JokePlatform,
+  JokeStyle,
+} from '@/types/news';
 
 export type SummaryStyle = 'short' | 'standard' | 'detailed';
 
@@ -15,11 +20,17 @@ export type GenerateSummaryResponse = {
   warnings: string[];
 };
 
-export type GenerateAnalysisFromTextRequest = Omit<GenerateAnalysisRequest, 'summary'> & {
+export type GenerateAnalysisFromTextRequest = Omit<
+  GenerateAnalysisRequest,
+  'summary'
+> & {
   text: string;
 };
 
-export type GenerateJokeFromTextRequest = Omit<GenerateJokeRequest, 'summary'> & {
+export type GenerateJokeFromTextRequest = Omit<
+  GenerateJokeRequest,
+  'summary'
+> & {
   text: string;
 };
 
@@ -45,3 +56,13 @@ export type GenerateCommentFromTextRequest = {
 
 export type ComposeJokePlatform = JokePlatform;
 export type ComposeJokeStyle = JokeStyle;
+
+export type ExtractUrlTextRequest = {
+  url: string;
+};
+
+export type ExtractUrlTextResponse = {
+  url: string;
+  text: string;
+  source_type: 'article' | 'youtube';
+};
