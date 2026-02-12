@@ -39,6 +39,13 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(async (config) => {
+  // eslint-disable-next-line no-console
+  console.log('[api][request]', {
+    method: config.method,
+    baseURL: config.baseURL,
+    url: config.url,
+  });
+
   const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -49,6 +56,15 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // eslint-disable-next-line no-console
+    console.log('[api][response][error]', {
+      code: error?.code,
+      status: error?.response?.status,
+      url: error?.config?.url,
+      message: error?.message,
+      data: error?.response?.data,
+    });
+
     const status = error?.response?.status;
     const requestUrl = String(error?.config?.url ?? '');
     const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
