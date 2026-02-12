@@ -1,18 +1,40 @@
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from datetime import datetime
 
 from models.models import Article, db
 
 RSS_FEEDS = {
-    "Tech": "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
-    "Business": "https://www.reutersagency.com/feed/?best-topics=business",
-    "World": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
-    "Politics": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
-    "Sports": "https://www.espn.com/espn/rss/news",
-    "Lifestyle": "https://www.reuters.com/lifestyle/",
+    # Support multiple source feeds per category while preserving category mapping.
+    "Tech": [
+        "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml",
+        "https://techcrunch.com/feed/",
+        "https://www.theverge.com/rss/index.xml",
+    ],
+    "Business": [
+        "https://feeds.bbci.co.uk/news/business/rss.xml",
+        "https://www.theguardian.com/business/rss",
+        "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    ],
+    "World": [
+        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        "https://feeds.bbci.co.uk/news/world/rss.xml",
+    ],
+    "Politics": [
+        "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
+        "https://www.theguardian.com/politics/rss",
+    ],
+    "Sports": [
+        "https://www.espn.com/espn/rss/news",
+        "https://feeds.bbci.co.uk/sport/rss.xml",
+    ],
+    "Lifestyle": [
+        "https://www.theguardian.com/lifeandstyle/rss",
+        "http://rss.cnn.com/rss/cnn_style.rss",
+        "https://www.vogue.com/feed/rss",
+    ],
 }
 
 # Only attempt full-page scraping for these domains
@@ -61,65 +83,96 @@ def _extract_rss_summary(entry) -> str:
     soup = BeautifulSoup(summary, "html.parser")
     return soup.get_text(" ", strip=True)
 
+def _normalize_source_url(url: str) -> str:
+    """Normalize URLs for reliable deduplication (e.g., strip UTM tracking params)."""
+    parsed = urlparse(url)
+    filtered_query = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if not key.lower().startswith("utm_")
+    ]
+    normalized_query = urlencode(filtered_query, doseq=True)
+    return urlunparse(parsed._replace(query=normalized_query))
+
 def run_harvester():
     """Loops through RSS feeds and saves new content to DB."""
     seen_urls = set()
     seen_hashes = set()
 
-    for category, feed_url in RSS_FEEDS.items():
-        feed = feedparser.parse(feed_url)
+    for category, feed_urls in RSS_FEEDS.items():
+        # Backward-compatible guard in case a category is still configured as a single URL.
+        if isinstance(feed_urls, str):
+            feed_urls = [feed_urls]
 
-        for entry in getattr(feed, "entries", []):
-            link = getattr(entry, "link", None)
-            title = getattr(entry, "title", None)
-            if not link or not title:
+        # Iterate every configured feed URL per category.
+        for feed_url in feed_urls:
+            try:
+                feed = feedparser.parse(feed_url)
+            except Exception:
+                # Keep harvesting even if one feed endpoint is unavailable.
                 continue
 
-            # URL dedupe
-            if link in seen_urls or Article.query.filter_by(source_url=link).first():
-                continue
+            for entry in getattr(feed, "entries", []):
+                link = getattr(entry, "link", None)
+                title = getattr(entry, "title", None)
+                if not link or not title:
+                    continue
 
-            source_domain = urlparse(link).netloc
-            rss_summary = _extract_rss_summary(entry)
+                normalized_link = _normalize_source_url(link)
 
-            raw_content = ""
-            fetch_status = "rss_only"
-
-            # Only scrape full page if allowed
-            if source_domain in SCRAPE_ALLOWED_DOMAINS:
-                html, status = _safe_get(link)
-                fetch_status = status
-                if status == "ok" and html:
-                    raw_content = _extract_text_generic(html)[:8000]
-                elif status in ("blocked_403", "blocked_429", "failed"):
-                    # fallback to RSS summary when blocked/failed
-                    raw_content = rss_summary[:2000] if rss_summary else ""
-            else:
-                # Not allowed → RSS-only (keeps logs clean)
-                raw_content = rss_summary[:2000] if rss_summary else ""
-
-            new_article = Article(
-                title=title,
-                source_url=link,
-                source_domain=source_domain,
-                raw_content=raw_content,
-                rss_summary=rss_summary,
-                fetch_status=fetch_status,
-                category=category,
-                created_at=datetime.utcnow(),  # if you have this field
-            )
-            new_article.set_content_hash()
-
-            # Hash dedupe (only if we have content)
-            if new_article.content_hash:
+                # URL dedupe (in-memory + persisted), now using normalized URLs.
                 if (
-                    new_article.content_hash in seen_hashes
-                    or Article.query.filter_by(content_hash=new_article.content_hash).first()
+                    normalized_link in seen_urls
+                    or Article.query.filter_by(source_url=normalized_link).first()
+                    or Article.query.filter_by(source_url=link).first()
                 ):
                     continue
-                seen_hashes.add(new_article.content_hash)
 
-            db.session.add(new_article)
-            seen_urls.add(link)
+                source_domain = urlparse(normalized_link).netloc
+                rss_summary = _extract_rss_summary(entry)
+
+                raw_content = ""
+                fetch_status = "rss_only"
+
+                # Only scrape full page if allowed
+                if source_domain in SCRAPE_ALLOWED_DOMAINS:
+                    html, status = _safe_get(normalized_link)
+                    fetch_status = status
+                    if status == "ok" and html:
+                        raw_content = _extract_text_generic(html)[:8000]
+                    elif status in ("blocked_403", "blocked_429", "failed"):
+                        # fallback to RSS summary when blocked/failed
+                        raw_content = rss_summary[:2000] if rss_summary else ""
+                else:
+                    # Not allowed → RSS-only (keeps logs clean)
+                    raw_content = rss_summary[:2000] if rss_summary else ""
+
+                # If we still have no usable content, preserve ingestion with title fallback.
+                if not raw_content:
+                    raw_content = title[:2000]
+
+                new_article = Article(
+                    title=title,
+                    source_url=normalized_link,
+                    source_domain=source_domain,
+                    raw_content=raw_content,
+                    rss_summary=rss_summary,
+                    fetch_status=fetch_status,
+                    category=category,
+                    created_at=datetime.utcnow(),  # if you have this field
+                )
+                new_article.set_content_hash()
+
+                # Hash dedupe (only if we have content)
+                if new_article.content_hash:
+                    if (
+                        new_article.content_hash in seen_hashes
+                        or Article.query.filter_by(content_hash=new_article.content_hash).first()
+                    ):
+                        continue
+                    seen_hashes.add(new_article.content_hash)
+
+                db.session.add(new_article)
+                seen_urls.add(normalized_link)
 
     db.session.commit()
