@@ -1,32 +1,32 @@
-import React, { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { StyleSheet, Text, View } from "react-native";
 
-import { AuthLayout } from '@/components/AuthLayout';
-import { Button } from '@/components/Button';
-import { ErrorState } from '@/components/ErrorState';
-import { Input } from '@/components/Input';
-import { login } from '@/lib/api/auth';
-import { useAuth } from '@/lib/auth/AuthProvider';
-import { useTheme } from '@/lib/theme/ThemeProvider';
-import { getTheme } from '@/lib/theme/tokens';
-import type { AuthStackParamList } from '@/navigation/AuthStack';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
-import type { FieldErrors } from 'react-hook-form';
+import { AuthLayout } from "@/components/AuthLayout";
+import { Button } from "@/components/Button";
+import { ErrorState } from "@/components/ErrorState";
+import { Input } from "@/components/Input";
+import { login } from "@/lib/api/auth";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useTheme } from "@/lib/theme/ThemeProvider";
+import { getTheme } from "@/lib/theme/tokens";
+import type { AuthStackParamList } from "@/navigation/AuthStack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RouteProp } from "@react-navigation/native";
+import type { FieldErrors } from "react-hook-form";
 
 const schema = z.object({
-  email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
-type LoginRouteProp = RouteProp<AuthStackParamList, 'Login'>;
+type LoginRouteProp = RouteProp<AuthStackParamList, "Login">;
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
@@ -34,7 +34,7 @@ export function LoginScreen() {
   const { signIn } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<LoginRouteProp>();
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
 
@@ -45,16 +45,16 @@ export function LoginScreen() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   const validationError = useMemo(
-    () => errors.email?.message ?? errors.password?.message ?? '',
+    () => errors.email?.message ?? errors.password?.message ?? "",
     [errors.email?.message, errors.password?.message],
   );
 
   const onSubmit = async (values: FormValues) => {
-    setError('');
+    setError("");
 
     const requestPayload = {
       email: values.email.trim(),
@@ -65,46 +65,96 @@ export function LoginScreen() {
       const data = await login(requestPayload);
       await signIn(data.token);
     } catch (err) {
-      setError((err as Error).message || 'Login failed. Please check your credentials and try again.');
+      setError(
+        (err as Error).message ||
+          "Login failed. Please check your credentials and try again.",
+      );
     }
   };
 
   const onInvalid = (formErrors: FieldErrors<FormValues>) => {
     // eslint-disable-next-line no-console
-    console.log('[auth][login] submit blocked by validation errors:', formErrors);
+    console.log(
+      "[auth][login] submit blocked by validation errors:",
+      formErrors,
+    );
   };
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to access your personalized news feed.">
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Log in to access your personalized news feed."
+    >
       <View style={styles.formGroup}>
         <Input
           placeholder="Email"
           autoCapitalize="none"
           keyboardType="email-address"
-          value={watch('email')}
-          onChangeText={(value) => setValue('email', value, { shouldDirty: true, shouldValidate: false })}
+          value={watch("email")}
+          onChangeText={(value) =>
+            setValue("email", value, {
+              shouldDirty: true,
+              shouldValidate: false,
+            })
+          }
           editable={!isSubmitting}
         />
         <Input
           placeholder="Password"
           secureTextEntry
-          value={watch('password')}
-          onChangeText={(value) => setValue('password', value, { shouldDirty: true, shouldValidate: false })}
+          value={watch("password")}
+          onChangeText={(value) =>
+            setValue("password", value, {
+              shouldDirty: true,
+              shouldValidate: false,
+            })
+          }
           editable={!isSubmitting}
         />
       </View>
-      {route.params?.message ? <Text style={[styles.infoText, { color: theme.colors.primary }]}>{route.params.message}</Text> : null}
+      {route.params?.message ? (
+        <Text style={[styles.infoText, { color: theme.colors.primary }]}>
+          {route.params.message}
+        </Text>
+      ) : null}
       {validationError ? <ErrorState message={validationError} /> : null}
       {error ? <ErrorState message={error} /> : null}
-      <Button label={isSubmitting ? 'Signing in...' : 'Login'} disabled={isSubmitting} onPress={handleSubmit(onSubmit, onInvalid)} />
+      <Button
+        label={isSubmitting ? "Signing in..." : "Login"}
+        disabled={isSubmitting}
+        onPress={handleSubmit(onSubmit, onInvalid)}
+      />
       {isSubmitting ? (
-        <Text style={[styles.submittingHint, { color: theme.colors.textMuted }]}> {`Submitting to ${apiUrl ?? 'EXPO_PUBLIC_API_URL not set'} ...`}</Text>
+        <Text
+          style={[styles.submittingHint, { color: theme.colors.textMuted }]}
+        >
+          {" "}
+          {`Submitting to ${apiUrl ?? "EXPO_PUBLIC_API_URL not set"} ...`}
+        </Text>
       ) : null}
       <View style={styles.secondaryActions}>
-        <Button label="Create account" variant="secondary" disabled={isSubmitting} onPress={() => navigation.navigate('Register')} />
-        <Button label="Forgot password" variant="ghost" disabled={isSubmitting} onPress={() => navigation.navigate('ForgotPassword')} />
+        <Button
+          label="Create account"
+          variant="secondary"
+          disabled={isSubmitting}
+          onPress={() => navigation.navigate("Register")}
+        />
+        <Button
+          label="View pricing"
+          variant="outline"
+          disabled={isSubmitting}
+          onPress={() => navigation.navigate("Pricing")}
+        />
+        <Button
+          label="Forgot password"
+          variant="ghost"
+          disabled={isSubmitting}
+          onPress={() => navigation.navigate("ForgotPassword")}
+        />
       </View>
-      <Text style={[styles.legalText, { color: theme.colors.textMuted }]}>By continuing you agree to the News Aggregator terms.</Text>
+      <Text style={[styles.legalText, { color: theme.colors.textMuted }]}>
+        By continuing you agree to the News Aggregator terms.
+      </Text>
     </AuthLayout>
   );
 }
@@ -117,7 +167,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   legalText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 12,
     lineHeight: 16,
   },

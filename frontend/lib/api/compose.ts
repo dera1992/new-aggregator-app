@@ -6,6 +6,8 @@ import type {
   GenerateSummaryRequest,
   GenerateSummaryResponse,
   GenerateViralPostFromTextRequest,
+  ExtractUrlTextRequest,
+  ExtractUrlTextResponse,
 } from '@/types/compose';
 import type {
   CommentResponse,
@@ -21,7 +23,9 @@ export function generateSummaryFromText(payload: GenerateSummaryRequest) {
   });
 }
 
-export function generateAnalysisFromText(payload: GenerateAnalysisFromTextRequest) {
+export function generateAnalysisFromText(
+  payload: GenerateAnalysisFromTextRequest,
+) {
   return apiFetch<GenerateAnalysisResponse>('/api/news/generate-analysis', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -35,15 +39,26 @@ export function generateJokeFromText(payload: GenerateJokeFromTextRequest) {
   });
 }
 
-export function generateViralPostFromText(payload: GenerateViralPostFromTextRequest) {
+export function generateViralPostFromText(
+  payload: GenerateViralPostFromTextRequest,
+) {
   return apiFetch<ViralPostResponse>('/api/news/generate-viral-post', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 }
 
-export function generateCommentFromText(payload: GenerateCommentFromTextRequest) {
+export function generateCommentFromText(
+  payload: GenerateCommentFromTextRequest,
+) {
   return apiFetch<CommentResponse>('/api/news/generate-comment', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function extractUrlText(payload: ExtractUrlTextRequest) {
+  return apiFetch<ExtractUrlTextResponse>('/api/news/extract-url-text', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
