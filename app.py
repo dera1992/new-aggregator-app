@@ -10,9 +10,17 @@ from routes.preferences import preferences_bp
 
 def create_app():
     app = Flask(__name__)
+    cors_origins_env = os.getenv("CORS_ORIGINS")
+    if not cors_origins_env:
+        cors_origins = "*"
+    elif cors_origins_env.strip() == "*":
+        cors_origins = "*"
+    else:
+        cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
     CORS(
         app,
-        resources={r"/api/*": {"origins": "http://localhost:3000"}},
+        resources={r"/api/*": {"origins": cors_origins}},
         supports_credentials=False,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
