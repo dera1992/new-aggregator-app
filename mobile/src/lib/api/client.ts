@@ -38,27 +38,28 @@ export const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(async (config) => {
-  // eslint-disable-next-line no-console
-  console.log('[api][request]', {
-    method: config.method,
-    baseURL: config.baseURL,
-    url: config.url,
-  });
+// After apiClient is created
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  const requestUrl = String(config.url ?? '');
-  const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
+    // ✅ Add this:
+    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
+    console.log('[api][request]', config.method?.toUpperCase(), fullUrl);
+    console.log('[api][request][headers]', {
+      Authorization: token ? 'Bearer ***' : undefined,
+      'Content-Type': config.headers?.['Content-Type'],
+    });
+    console.log('[api][request][data]', config.data);
 
-  if (isAuthEndpoint) {
     return config;
+  },
+  (err) => {
+    console.log('[api][request][error]', err?.message ?? err);
+    return Promise.reject(err);
   }
-
-  const token = await getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+);
 
 apiClient.interceptors.response.use(
   (response) => response,
@@ -83,7 +84,19 @@ apiClient.interceptors.response.use(
 
     return Promise.reject(normalizeError(error));
   },
+  (error) => {
+    const fullUrl = `${error?.config?.baseURL ?? ''}${error?.config?.url ?? ''}`;
+    console.log('[api][response][error]', {
+      url: fullUrl,
+      code: error?.code,
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data,
+    });
+    return Promise.reject(error);
+  }
 );
+
 
 function normalizeError(error: any) {
   const data = error?.response?.data as ErrorResponse | undefined;
