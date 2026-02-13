@@ -39,7 +39,7 @@ async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeou
 }
 
 export async function login(payload: { email: string; password: string }) {
-  const request = apiClient.post<AuthResponse>('/api/auth/sign-in', payload);
+  const request = apiClient.post<AuthResponse>('/api/auth/login', payload);
   const { data } = await withHardTimeout(
     request,
     LOGIN_HARD_TIMEOUT_MS,
