@@ -44,7 +44,10 @@ The API will be available at http://localhost:8080. Environment variables are co
    export SECRET_KEY="change-me"
    export RUN_BACKGROUND_JOBS="true"
    export REDIS_URL="redis://localhost:6379/0"
+   export CORS_ORIGINS="http://localhost:3000,http://192.168.0.147:8080,exp://192.168.0.147:8081"
    ```
+
+   `CORS_ORIGINS` controls allowed origins for `/api/*` requests. If omitted, it defaults to `*` for local development. Set `CORS_ORIGINS="*"` to explicitly allow all origins, or provide a comma-separated list for stricter environments.
 
 3. **Start the server**
    ```bash

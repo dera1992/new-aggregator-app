@@ -119,6 +119,7 @@ def confirm_email():
 
 
 @auth_bp.route('/api/auth/login', methods=['POST'])
+@auth_bp.route('/api/auth/sign-in', methods=['POST'])
 def login():
     data = get_json_payload()
     email = normalize_email(data.get('email'))

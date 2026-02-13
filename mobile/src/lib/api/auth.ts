@@ -23,8 +23,8 @@ async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeou
 
 export async function login(payload: { email: string; password: string }) {
   // eslint-disable-next-line no-console
-  console.log('[auth][api] POST /api/auth/login payload:', { email: payload.email, passwordLength: payload.password.length });
-  const request = apiClient.post<AuthResponse>('/api/auth/login', payload);
+  console.log('[auth][api] POST /api/auth/sign-in payload:', { email: payload.email, passwordLength: payload.password.length });
+  const request = apiClient.post<AuthResponse>('/api/auth/sign-in', payload);
   const { data } = await withHardTimeout(
     request,
     LOGIN_HARD_TIMEOUT_MS,

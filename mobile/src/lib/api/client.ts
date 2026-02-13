@@ -62,10 +62,27 @@ apiClient.interceptors.request.use(
 );
 
 apiClient.interceptors.response.use(
-  (response) => {
-    console.log('[api][response]', response.status, response.config.url);
-    console.log('[api][response][data]', response.data);
-    return response;
+  (response) => response,
+  async (error) => {
+    // eslint-disable-next-line no-console
+    console.log('[api][response][error]', {
+      code: error?.code,
+      status: error?.response?.status,
+      url: error?.config?.url,
+      message: error?.message,
+      data: error?.response?.data,
+    });
+
+    const status = error?.response?.status;
+    const requestUrl = String(error?.config?.url ?? '');
+    const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
+
+    if ((status === 401 || status === 403) && !isAuthEndpoint) {
+      await clearToken();
+      navigate('Auth');
+    }
+
+    return Promise.reject(normalizeError(error));
   },
   (error) => {
     const fullUrl = `${error?.config?.baseURL ?? ''}${error?.config?.url ?? ''}`;
