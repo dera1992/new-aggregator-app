@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import type { AuthResponse, MessageResponse } from '@/types/user';
 
-const LOGIN_HARD_TIMEOUT_MS = 15000;
+const LOGIN_HARD_TIMEOUT_MS = 30000;
 
 async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;

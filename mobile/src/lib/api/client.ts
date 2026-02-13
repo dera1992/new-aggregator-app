@@ -38,52 +38,48 @@ export const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(async (config) => {
-  // eslint-disable-next-line no-console
-  console.log('[api][request]', {
-    method: config.method,
-    baseURL: config.baseURL,
-    url: config.url,
-  });
+// After apiClient is created
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  const requestUrl = String(config.url ?? '');
-  const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
+    // ✅ Add this:
+    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
+    console.log('[api][request]', config.method?.toUpperCase(), fullUrl);
+    console.log('[api][request][headers]', {
+      Authorization: token ? 'Bearer ***' : undefined,
+      'Content-Type': config.headers?.['Content-Type'],
+    });
+    console.log('[api][request][data]', config.data);
 
-  if (isAuthEndpoint) {
     return config;
+  },
+  (err) => {
+    console.log('[api][request][error]', err?.message ?? err);
+    return Promise.reject(err);
   }
-
-  const token = await getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+);
 
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    // eslint-disable-next-line no-console
+  (response) => {
+    console.log('[api][response]', response.status, response.config.url);
+    console.log('[api][response][data]', response.data);
+    return response;
+  },
+  (error) => {
+    const fullUrl = `${error?.config?.baseURL ?? ''}${error?.config?.url ?? ''}`;
     console.log('[api][response][error]', {
+      url: fullUrl,
       code: error?.code,
-      status: error?.response?.status,
-      url: error?.config?.url,
       message: error?.message,
+      status: error?.response?.status,
       data: error?.response?.data,
     });
-
-    const status = error?.response?.status;
-    const requestUrl = String(error?.config?.url ?? '');
-    const isAuthEndpoint = requestUrl.startsWith('/api/auth/');
-
-    if ((status === 401 || status === 403) && !isAuthEndpoint) {
-      await clearToken();
-      navigate('Auth');
-    }
-
-    return Promise.reject(normalizeError(error));
-  },
+    return Promise.reject(error);
+  }
 );
+
 
 function normalizeError(error: any) {
   const data = error?.response?.data as ErrorResponse | undefined;
