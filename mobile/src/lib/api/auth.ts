@@ -1,7 +1,24 @@
 import { apiClient } from './client';
 import type { AuthResponse, MessageResponse } from '@/types/user';
 
-const LOGIN_HARD_TIMEOUT_MS = 60000;
+function extractAuthToken(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+  const tokenFields = [candidate.token, candidate.access_token, candidate.authToken];
+
+  for (const field of tokenFields) {
+    if (typeof field === 'string' && field.trim().length > 0) {
+      return field;
+    }
+  }
+
+  return null;
+}
+
+const LOGIN_HARD_TIMEOUT_MS = 30000;
 
 async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -28,7 +45,13 @@ export async function login(payload: { email: string; password: string }) {
     LOGIN_HARD_TIMEOUT_MS,
     'Login request timed out. If register/forgot-password work but login hangs, check backend logs for /api/auth/login and confirm no proxy/firewall rule is blocking this route.',
   );
-  return data;
+
+  const token = extractAuthToken(data);
+  if (!token) {
+    throw new Error('Login succeeded but no auth token was returned by the API response.');
+  }
+
+  return { ...data, token };
 }
 
 export async function register(payload: { email: string; password: string; name?: string }) {
