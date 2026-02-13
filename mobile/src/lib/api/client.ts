@@ -84,17 +84,6 @@ apiClient.interceptors.response.use(
 
     return Promise.reject(normalizeError(error));
   },
-  (error) => {
-    const fullUrl = `${error?.config?.baseURL ?? ''}${error?.config?.url ?? ''}`;
-    console.log('[api][response][error]', {
-      url: fullUrl,
-      code: error?.code,
-      message: error?.message,
-      status: error?.response?.status,
-      data: error?.response?.data,
-    });
-    return Promise.reject(error);
-  }
 );
 
 
