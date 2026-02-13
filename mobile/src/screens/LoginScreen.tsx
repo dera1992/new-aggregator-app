@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +35,6 @@ export function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<LoginRouteProp>();
   const [error, setError] = useState("");
-  const [debugTrace, setDebugTrace] = useState<string[]>([]);
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
 
@@ -48,31 +47,12 @@ export function LoginScreen() {
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
-
-
-  const addDebugTrace = useCallback((event: string, payload?: Record<string, unknown>) => {
-    const timestamp = new Date().toISOString().split("T")[1]?.replace("Z", "") ?? "time";
-    const detail = payload ? ` ${JSON.stringify(payload)}` : "";
-    const line = `[${timestamp}] ${event}${detail}`;
-
-    // eslint-disable-next-line no-console
-    console.log(line);
-
-    setDebugTrace((current) => [line, ...current].slice(0, 6));
-  }, []);
-
   const validationError = useMemo(
     () => errors.email?.message ?? errors.password?.message ?? "",
     [errors.email?.message, errors.password?.message],
   );
 
   const onSubmit = async (values: FormValues) => {
-    addDebugTrace("[auth][login] onSubmit triggered", {
-      email: values.email,
-      passwordLength: values.password.length,
-      apiUrl,
-    });
-
     setError("");
 
     const requestPayload = {
@@ -81,18 +61,9 @@ export function LoginScreen() {
     };
 
     try {
-      addDebugTrace("[auth][login] calling login API", {
-        email: requestPayload.email,
-      });
       const data = await login(requestPayload);
-      addDebugTrace("[auth][login] login API success", {
-        hasToken: Boolean(data?.token),
-      });
       await signIn(data.token);
     } catch (err) {
-      addDebugTrace("[auth][login] login API failed", {
-        message: (err as Error)?.message,
-      });
       setError(
         (err as Error).message ||
           "Login failed. Please check your credentials and try again.",
@@ -101,9 +72,7 @@ export function LoginScreen() {
   };
 
   const onInvalid = (formErrors: FieldErrors<FormValues>) => {
-    addDebugTrace("[auth][login] submit blocked by validation errors", {
-      formErrors,
-    });
+    void formErrors;
   };
 
   return (
@@ -148,10 +117,7 @@ export function LoginScreen() {
       <Button
         label={isSubmitting ? "Signing in..." : "Login"}
         disabled={isSubmitting}
-        onPress={() => {
-          addDebugTrace("[auth][login] login button pressed");
-          return handleSubmit(onSubmit, onInvalid)();
-        }}
+        onPress={() => handleSubmit(onSubmit, onInvalid)()}
       />
       {isSubmitting ? (
         <Text
@@ -160,24 +126,6 @@ export function LoginScreen() {
           {" "}
           {`Submitting to ${apiUrl ?? "EXPO_PUBLIC_API_URL not set"} ...`}
         </Text>
-      ) : null}
-      {__DEV__ ? (
-        <View style={styles.debugPanel}>
-          <Text style={[styles.debugTitle, { color: theme.colors.textMuted }]}>
-            Login debug trace
-          </Text>
-          {debugTrace.length === 0 ? (
-            <Text style={[styles.debugLine, { color: theme.colors.textMuted }]}>
-              No login events yet. Tap Login to generate trace.
-            </Text>
-          ) : (
-            debugTrace.map((line) => (
-              <Text key={line} style={[styles.debugLine, { color: theme.colors.textMuted }]}>
-                {line}
-              </Text>
-            ))
-          )}
-        </View>
       ) : null}
       <View style={styles.secondaryActions}>
         <Button
@@ -212,18 +160,6 @@ const styles = StyleSheet.create({
   },
   secondaryActions: {
     gap: 10,
-  },
-  debugPanel: {
-    marginTop: 8,
-    gap: 4,
-  },
-  debugTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  debugLine: {
-    fontSize: 11,
-    lineHeight: 14,
   },
   legalText: {
     textAlign: "center",
