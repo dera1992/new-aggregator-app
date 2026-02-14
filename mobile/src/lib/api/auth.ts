@@ -18,7 +18,7 @@ function extractAuthToken(payload: unknown): string | null {
   return null;
 }
 
-const LOGIN_HARD_TIMEOUT_MS = 30000;
+const LOGIN_HARD_TIMEOUT_MS = 80000;
 
 async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
