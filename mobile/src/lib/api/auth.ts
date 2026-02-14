@@ -24,7 +24,7 @@ function extractAuthToken(payload: unknown): string | null {
     pickTokenField((payload as Record<string, unknown> | undefined)?.result);
 }
 
-const LOGIN_REQUEST_TIMEOUT_MS = 45000;
+const LOGIN_REQUEST_TIMEOUT_MS = 12000;
 
 export async function login(payload: { email: string; password: string }) {
   const { data } = await apiClient.post<AuthResponse>('/api/auth/login', payload, {
@@ -33,7 +33,7 @@ export async function login(payload: { email: string; password: string }) {
 
   const token = extractAuthToken(data);
   if (!token) {
-    throw new Error('Login succeeded but no auth token was returned by the API response.');
+    throw new Error('Login succeeded but no auth token was returned by the API response. Check backend JSON shape for token/access_token/authToken.');
   }
 
   return { ...data, token };
