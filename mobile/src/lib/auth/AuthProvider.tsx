@@ -5,7 +5,7 @@ import { clearToken, getToken, setToken } from './token';
 export type AuthContextValue = {
   token: string | null;
   isReady: boolean;
-  signIn: (nextToken: string) => Promise<void>;
+  signIn: (nextToken: string) => void;
   signOut: () => Promise<void>;
 };
 
@@ -27,15 +27,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadToken();
   }, []);
 
-  const signIn = useCallback(async (nextToken: string) => {
+  const signIn = useCallback((nextToken: string) => {
     hydratedRef.current = true;
     setTokenState(nextToken);
 
-    try {
-      await setToken(nextToken);
-    } catch (error) {
+    // Do not block UI transition on secure-store persistence latency.
+    void setToken(nextToken).catch((error) => {
       console.warn('Failed to persist auth token.', error);
-    }
+    });
   }, []);
 
   const signOut = useCallback(async () => {

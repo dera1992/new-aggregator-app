@@ -64,15 +64,7 @@ export function LoginScreen() {
     try {
       // Step 1: API request (12s timeout from auth.ts)
       const data = await login(requestPayload);
-
-      // Step 2: Save token (separate timeout)
-      const STORAGE_TIMEOUT = 5000; // 5s for AsyncStorage
-      await Promise.race([
-        signIn(data.token),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Storage timeout')), STORAGE_TIMEOUT)
-        ),
-      ]);
+      signIn(data.token);
     } catch (err) {
       console.error('Login error:', err);
       setError(
