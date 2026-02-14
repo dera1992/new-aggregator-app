@@ -17,6 +17,13 @@ npm install
 
 Set `EXPO_PUBLIC_API_URL` in `.env` to your Flask backend (e.g. `http://localhost:8080`).
 
+Optional platform-specific overrides are also supported:
+
+- `EXPO_PUBLIC_API_URL_ANDROID`
+- `EXPO_PUBLIC_API_URL_IOS`
+
+When set, these take precedence for that platform and help when Android emulator / iOS simulator / Expo Go need different URLs.
+
 If you test with **Expo Go on a physical phone**, do **not** use `localhost`; use your computer LAN IP instead (for example `http://192.168.1.10:8080`).
 
 ## Run
