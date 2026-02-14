@@ -23,3 +23,25 @@ export function navigate<RouteName extends keyof RootStackParamList>(
     }),
   );
 }
+
+
+export function resetToRoot<RouteName extends keyof RootStackParamList>(
+  name: RouteName,
+  params?: RootStackParamList[RouteName],
+) {
+  if (!navigationRef.isReady()) {
+    return;
+  }
+
+  navigationRef.dispatch(
+    CommonActions.reset({
+      index: 0,
+      routes: [
+        {
+          name: name as string,
+          params: params as object | undefined,
+        },
+      ],
+    }),
+  );
+}
