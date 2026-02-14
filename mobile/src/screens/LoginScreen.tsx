@@ -52,6 +52,7 @@ export function LoginScreen() {
     [errors.email?.message, errors.password?.message],
   );
 
+  // In LoginScreen.tsx, update onSubmit:
   const onSubmit = async (values: FormValues) => {
     setError("");
 
@@ -61,9 +62,19 @@ export function LoginScreen() {
     };
 
     try {
+      // Step 1: API request (12s timeout from auth.ts)
       const data = await login(requestPayload);
-      await signIn(data.token);
+
+      // Step 2: Save token (separate timeout)
+      const STORAGE_TIMEOUT = 5000; // 5s for AsyncStorage
+      await Promise.race([
+        signIn(data.token),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Storage timeout')), STORAGE_TIMEOUT)
+        ),
+      ]);
     } catch (err) {
+      console.error('Login error:', err);
       setError(
         (err as Error).message ||
           "Login failed. Please check your credentials and try again.",

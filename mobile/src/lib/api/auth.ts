@@ -24,7 +24,7 @@ function extractAuthToken(payload: unknown): string | null {
     pickTokenField((payload as Record<string, unknown> | undefined)?.result);
 }
 
-const LOGIN_REQUEST_TIMEOUT_MS = 12000;
+const LOGIN_REQUEST_TIMEOUT_MS = 20000;
 
 export async function login(payload: { email: string; password: string }) {
   const { data } = await apiClient.post<AuthResponse>('/api/auth/login', payload, {
