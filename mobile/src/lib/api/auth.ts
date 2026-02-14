@@ -1,12 +1,12 @@
 import { apiClient } from './client';
 import type { AuthResponse, MessageResponse } from '@/types/user';
 
-function extractAuthToken(payload: unknown): string | null {
-  if (!payload || typeof payload !== 'object') {
+function pickTokenField(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
     return null;
   }
 
-  const candidate = payload as Record<string, unknown>;
+  const candidate = value as Record<string, unknown>;
   const tokenFields = [candidate.token, candidate.access_token, candidate.authToken];
 
   for (const field of tokenFields) {
@@ -18,33 +18,18 @@ function extractAuthToken(payload: unknown): string | null {
   return null;
 }
 
-const LOGIN_HARD_TIMEOUT_MS = 80000;
-
-async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(timeoutMessage));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-  }
+function extractAuthToken(payload: unknown): string | null {
+  return pickTokenField(payload) ??
+    pickTokenField((payload as Record<string, unknown> | undefined)?.data) ??
+    pickTokenField((payload as Record<string, unknown> | undefined)?.result);
 }
 
+const LOGIN_REQUEST_TIMEOUT_MS = 45000;
+
 export async function login(payload: { email: string; password: string }) {
-  const request = apiClient.post<AuthResponse>('/api/auth/login', payload);
-  const { data } = await withHardTimeout(
-    request,
-    LOGIN_HARD_TIMEOUT_MS,
-    'Login request to /api/auth/login timed out.',
-  );
+  const { data } = await apiClient.post<AuthResponse>('/api/auth/login', payload, {
+    timeout: LOGIN_REQUEST_TIMEOUT_MS,
+  });
 
   const token = extractAuthToken(data);
   if (!token) {
