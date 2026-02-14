@@ -43,7 +43,7 @@ export async function login(payload: { email: string; password: string }) {
   const { data } = await withHardTimeout(
     request,
     LOGIN_HARD_TIMEOUT_MS,
-    'Login request timed out. If register/forgot-password work but login hangs, check backend logs for /api/auth/login and confirm no proxy/firewall rule is blocking this route.',
+    'Login request to /api/auth/login timed out.',
   );
 
   const token = extractAuthToken(data);
