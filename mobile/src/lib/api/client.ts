@@ -22,13 +22,6 @@ function resolveApiUrl(rawApiUrl: string | undefined) {
 
 const resolvedApiUrl = resolveApiUrl(apiUrl);
 
-if (!apiUrl) {
-  // eslint-disable-next-line no-console
-  console.warn('EXPO_PUBLIC_API_URL is not set.');
-} else if (resolvedApiUrl !== apiUrl) {
-  // eslint-disable-next-line no-console
-  console.warn(`Using Android emulator API URL rewrite: ${apiUrl} -> ${resolvedApiUrl}`);
-}
 
 export const apiClient = axios.create({
   baseURL: resolvedApiUrl,
@@ -38,25 +31,14 @@ export const apiClient = axios.create({
   },
 });
 
-// After apiClient is created
 apiClient.interceptors.request.use(
   async (config) => {
     const token = await getToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
 
-    // ✅ Add this:
-    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
-    console.log('[api][request]', config.method?.toUpperCase(), fullUrl);
-    console.log('[api][request][headers]', {
-      Authorization: token ? 'Bearer ***' : undefined,
-      'Content-Type': config.headers?.['Content-Type'],
-    });
-    console.log('[api][request][data]', config.data);
-
     return config;
   },
   (err) => {
-    console.log('[api][request][error]', err?.message ?? err);
     return Promise.reject(err);
   }
 );
@@ -64,14 +46,6 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // eslint-disable-next-line no-console
-    console.log('[api][response][error]', {
-      code: error?.code,
-      status: error?.response?.status,
-      url: error?.config?.url,
-      message: error?.message,
-      data: error?.response?.data,
-    });
 
     const status = error?.response?.status;
     const requestUrl = String(error?.config?.url ?? '');
@@ -83,17 +57,6 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(normalizeError(error));
-  },
-  (error) => {
-    const fullUrl = `${error?.config?.baseURL ?? ''}${error?.config?.url ?? ''}`;
-    console.log('[api][response][error]', {
-      url: fullUrl,
-      code: error?.code,
-      message: error?.message,
-      status: error?.response?.status,
-      data: error?.response?.data,
-    });
-    return Promise.reject(error);
   }
 );
 

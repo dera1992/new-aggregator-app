@@ -8,7 +8,9 @@ export type Preferences = {
 export type PreferencesResponse = Preferences;
 
 export type AuthResponse = {
-  token: string;
+  token?: string;
+  access_token?: string;
+  authToken?: string;
   message?: string;
 };
 
