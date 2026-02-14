@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -8,7 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { StoryDetailScreen } from '@/screens/StoryDetailScreen';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useTheme } from '@/lib/theme/ThemeProvider';
-import { navigationRef, RootStackParamList } from './root-navigation';
+import { navigationRef, resetToRoot, RootStackParamList } from './root-navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -40,6 +40,22 @@ export function RootNavigator() {
         },
       };
 
+
+  useEffect(() => {
+    if (!navigationRef.isReady()) {
+      return;
+    }
+
+    const currentRouteName = navigationRef.getCurrentRoute()?.name;
+    if (token && currentRouteName !== 'Main' && currentRouteName !== 'StoryDetail') {
+      resetToRoot('Main');
+    }
+
+    if (!token && currentRouteName !== 'Auth') {
+      resetToRoot('Auth');
+    }
+  }, [token]);
+
   if (!isReady || !themeReady) {
     return (
       <View className="flex-1 items-center justify-center bg-background dark:bg-dark-background">
@@ -49,8 +65,18 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      onReady={() => {
+        if (token) {
+          resetToRoot('Main');
+        } else {
+          resetToRoot('Auth');
+        }
+      }}
+    >
+      <Stack.Navigator key={token ? 'main' : 'auth'} screenOptions={{ headerShown: false }}>
         {token ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />

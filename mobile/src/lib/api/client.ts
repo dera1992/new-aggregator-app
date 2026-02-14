@@ -6,6 +6,8 @@ import { navigate } from '@/navigation/root-navigation';
 import type { ErrorResponse } from '@/types/user';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+const androidApiUrl = process.env.EXPO_PUBLIC_API_URL_ANDROID;
+const iosApiUrl = process.env.EXPO_PUBLIC_API_URL_IOS;
 const REQUEST_TIMEOUT_MS = 12000;
 
 function resolveApiUrl(rawApiUrl: string | undefined) {
@@ -20,7 +22,20 @@ function resolveApiUrl(rawApiUrl: string | undefined) {
   return rawApiUrl.replace('://localhost', '://10.0.2.2').replace('://127.0.0.1', '://10.0.2.2');
 }
 
-const resolvedApiUrl = resolveApiUrl(apiUrl);
+function pickPlatformApiUrl() {
+  if (Platform.OS === 'android' && androidApiUrl) {
+    return androidApiUrl;
+  }
+
+  if (Platform.OS === 'ios' && iosApiUrl) {
+    return iosApiUrl;
+  }
+
+  return apiUrl;
+}
+
+const selectedApiUrl = pickPlatformApiUrl();
+const resolvedApiUrl = resolveApiUrl(selectedApiUrl);
 
 
 export const apiClient = axios.create({
@@ -96,7 +111,7 @@ function buildFriendlyNetworkError(error: any) {
     return null;
   }
 
-  if (apiUrl?.includes('localhost') || apiUrl?.includes('127.0.0.1')) {
+  if (selectedApiUrl?.includes('localhost') || selectedApiUrl?.includes('127.0.0.1')) {
     if (Platform.OS === 'android') {
       return 'Cannot reach API from Android emulator using localhost. Use http://10.0.2.2:<port> (or your LAN IP for Expo Go on a physical phone).';
     }

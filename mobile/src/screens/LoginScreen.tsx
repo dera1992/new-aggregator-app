@@ -62,7 +62,7 @@ export function LoginScreen() {
 
     try {
       const data = await login(requestPayload);
-      await signIn(data.token);
+      signIn(data.token);
     } catch (err) {
       setError(
         (err as Error).message ||
