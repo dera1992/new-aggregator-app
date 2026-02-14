@@ -1,41 +1,45 @@
 import { apiClient } from './client';
 import type { AuthResponse, MessageResponse } from '@/types/user';
 
-const LOGIN_HARD_TIMEOUT_MS = 30000;
+function pickTokenField(value: unknown): string | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
 
-async function withHardTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const candidate = value as Record<string, unknown>;
+  const tokenFields = [candidate.token, candidate.access_token, candidate.authToken];
 
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(timeoutMessage));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+  for (const field of tokenFields) {
+    if (typeof field === 'string' && field.trim().length > 0) {
+      return field;
     }
   }
+
+  return null;
 }
 
+function extractAuthToken(payload: unknown): string | null {
+  return pickTokenField(payload) ??
+    pickTokenField((payload as Record<string, unknown> | undefined)?.data) ??
+    pickTokenField((payload as Record<string, unknown> | undefined)?.result);
+}
+
+const LOGIN_REQUEST_TIMEOUT_MS = 12000;
+
 export async function login(payload: { email: string; password: string }) {
-  // eslint-disable-next-line no-console
-  console.log('[auth][api] POST /api/auth/sign-in payload:', { email: payload.email, passwordLength: payload.password.length });
-  const request = apiClient.post<AuthResponse>('/api/auth/sign-in', payload);
-  const { data } = await withHardTimeout(
-    request,
-    LOGIN_HARD_TIMEOUT_MS,
-    'Login request timed out. If register/forgot-password work but login hangs, check backend logs for /api/auth/login and confirm no proxy/firewall rule is blocking this route.',
-  );
-  return data;
+  const { data } = await apiClient.post<AuthResponse>('/api/auth/login', payload, {
+    timeout: LOGIN_REQUEST_TIMEOUT_MS,
+  });
+
+  const token = extractAuthToken(data);
+  if (!token) {
+    throw new Error('Login succeeded but no auth token was returned by the API response. Check backend JSON shape for token/access_token/authToken.');
+  }
+
+  return { ...data, token };
 }
 
 export async function register(payload: { email: string; password: string; name?: string }) {
-  // eslint-disable-next-line no-console
-  console.log('[auth][api] POST /api/auth/register payload:', { email: payload.email, passwordLength: payload.password.length });
   const { data } = await apiClient.post<MessageResponse>('/api/auth/register', payload);
   return data;
 }
