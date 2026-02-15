@@ -99,6 +99,10 @@ android {
             keyPassword 'android'
         }
     }
+    aaptOptions {
+      cruncherEnabled false
+    }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug

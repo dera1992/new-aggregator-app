@@ -5,7 +5,7 @@ import { clearToken, getToken } from '../auth/token';
 import { navigate } from '@/navigation/root-navigation';
 import type { ErrorResponse } from '@/types/user';
 
-const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://169b-80-3-126-18.ngrok-free.app';
 const androidApiUrl = process.env.EXPO_PUBLIC_API_URL_ANDROID;
 const iosApiUrl = process.env.EXPO_PUBLIC_API_URL_IOS;
 const REQUEST_TIMEOUT_MS = 12000;
@@ -24,19 +24,27 @@ function resolveApiUrl(rawApiUrl: string | undefined) {
 
 function pickPlatformApiUrl() {
   if (Platform.OS === 'android' && androidApiUrl) {
+    console.log('📱 Using Android-specific API URL:', androidApiUrl);
     return androidApiUrl;
   }
 
   if (Platform.OS === 'ios' && iosApiUrl) {
+    console.log('📱 Using iOS-specific API URL:', iosApiUrl);
     return iosApiUrl;
   }
 
+  console.log('📱 Using default API URL:', apiUrl);
   return apiUrl;
 }
 
 const selectedApiUrl = pickPlatformApiUrl();
 const resolvedApiUrl = resolveApiUrl(selectedApiUrl);
 
+console.log('🌐 API Client Configuration:');
+console.log('🌐 Platform:', Platform.OS);
+console.log('🌐 Selected URL:', selectedApiUrl);
+console.log('🌐 Resolved URL:', resolvedApiUrl);
+console.log('🌐 Timeout:', REQUEST_TIMEOUT_MS, 'ms');
 
 export const apiClient = axios.create({
   baseURL: resolvedApiUrl,
@@ -48,19 +56,35 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   async (config) => {
+    console.log('📤 REQUEST:', config.method?.toUpperCase(), config.url);
+    console.log('📤 Full URL:', (config.baseURL || '') + (config.url || ''));
+    console.log('📤 Data:', JSON.stringify(config.data));
+
     const token = await getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('📤 Token attached');
+    }
 
     return config;
   },
   (err) => {
+    console.error('📤 Request error:', err);
     return Promise.reject(err);
   }
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('📥 SUCCESS:', response.status, response.config.url);
+    console.log('📥 Data:', JSON.stringify(response.data).substring(0, 150));
+    return response;
+  },
   async (error) => {
+    console.error('📥 ERROR:', error.message);
+    console.error('📥 Code:', error.code);
+    console.error('📥 Status:', error.response?.status);
+    console.error('📥 Response:', error.response?.data);
 
     const status = error?.response?.status;
     const requestUrl = String(error?.config?.url ?? '');
@@ -74,7 +98,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(normalizeError(error));
   }
 );
-
 
 function normalizeError(error: any) {
   const data = error?.response?.data as ErrorResponse | undefined;

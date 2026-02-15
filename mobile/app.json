@@ -8,7 +8,20 @@
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.dera1992.newsaggregatormobile",
-      "softwareKeyboardLayoutMode": "pan"
-    }
+      "softwareKeyboardLayoutMode": "pan",
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"],
+      "usesCleartextTraffic": true
+    },
+    "ios": {
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
+    "plugins": [
+      "expo-dev-client"
+    ]
   }
 }
