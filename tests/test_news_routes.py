@@ -37,8 +37,9 @@ def test_news_feed_filters_and_story_endpoint(tmp_path, monkeypatch):
             title="Test Story",
             source_url="https://example.com/story",
             source_domain="example.com",
-            raw_content="content",
-            ai_summary="summary",
+            raw_content="content for fallback summary path",
+            ai_summary=None,
+            rss_summary="rss fallback summary",
             category="Tech",
             cluster_id=123,
         )
@@ -63,12 +64,13 @@ def test_news_feed_filters_and_story_endpoint(tmp_path, monkeypatch):
         assert feed_response.status_code == 200
         payload = feed_response.get_json()
         assert payload["count"] == 1
-        assert payload["stories"][0]["summary"] == "summary"
+        assert payload["stories"][0]["summary"] is None
 
         story_response = client.get("/api/news/story/123", headers=headers)
         assert story_response.status_code == 200
         story_payload = story_response.get_json()
         assert story_payload["cluster_id"] == 123
+        assert story_payload["summary"] == "rss fallback summary"
 
         archive_response = client.get("/api/news/archive?category=Sports", headers=headers)
         assert archive_response.status_code == 200
@@ -369,3 +371,379 @@ def test_generate_perspective_uses_router_cache(tmp_path, monkeypatch):
         assert second.get_json()["cluster_id"] == 42
 
     assert calls["count"] == 1
+
+
+def test_generate_comment_accepts_boolean_fact_mode(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_comment_bool_fact_mode.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_comment(**kwargs):
+        observed.update(kwargs)
+        return {"variants": [{"text": "ok"}]}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_comment", fake_generate_comment)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="comment-bool@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "summary": "A short story summary.",
+        "platform": "Twitter",
+        "style": "neutral",
+        "audience": "builders",
+        "max_variants": 1,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-comment", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["fact_mode"] == "strict"
+
+
+def test_generate_viral_post_accepts_boolean_fact_mode(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_viral_bool_fact_mode.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_viral_post(**kwargs):
+        observed.update(kwargs)
+        return {"variants": [{"text": "ok"}]}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_viral_post", fake_generate_viral_post)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="viral-bool@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "summary": "summary text",
+        "platform": "twitter",
+        "tone": "playful",
+        "goal": "engagement",
+        "audience": "founders",
+        "brand_voice": "bold",
+        "max_variants": 1,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-viral-post", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["fact_mode"] == "strict"
+
+
+def test_generate_summary_accepts_small_max_length(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_summary_small_max_length.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_summary(**kwargs):
+        observed.update(kwargs)
+        return {"summary": "ok", "warnings": []}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_summary", fake_generate_summary)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="summary-small-max@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "text": "A" * 80,
+        "style": "short",
+        "max_length": 10,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-summary", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["max_length"] == 10
+
+
+def test_generate_comment_from_text_accepts_payload(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_comment_from_text.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    calls = {"summary": 0, "comment": 0}
+
+    def fake_generate_summary(**_kwargs):
+        calls["summary"] += 1
+        return {"summary": "generated summary", "warnings": []}
+
+    def fake_generate_comment(**kwargs):
+        calls["comment"] += 1
+        assert kwargs["summary"] == "generated summary"
+        return {"variants": [{"text": "ok"}]}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_summary", fake_generate_summary)
+    monkeypatch.setattr(news_module, "generate_comment", fake_generate_comment)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="comment-from-text@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "text": "B" * 120,
+        "platform": "General",
+        "style": "curious",
+        "audience": "General audience",
+        "max_variants": 2,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-comment", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert calls == {"summary": 1, "comment": 1}
+
+
+def test_generate_viral_post_from_text_accepts_payload(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_viral_from_text.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    calls = {"summary": 0, "viral": 0}
+
+    def fake_generate_summary(**_kwargs):
+        calls["summary"] += 1
+        return {"summary": "generated summary", "warnings": []}
+
+    def fake_generate_viral_post(**kwargs):
+        calls["viral"] += 1
+        assert kwargs["summary"] == "generated summary"
+        return {"variants": [{"text": "ok"}]}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_summary", fake_generate_summary)
+    monkeypatch.setattr(news_module, "generate_viral_post", fake_generate_viral_post)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="viral-from-text@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "text": "C" * 120,
+        "platform": "twitter",
+        "tone": "punchy",
+        "goal": "engagement",
+        "audience": "General audience",
+        "brand_voice": "clear and confident",
+        "max_variants": 2,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-viral-post", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert calls == {"summary": 1, "viral": 1}
+
+
+def test_generate_comment_accepts_lowercase_platform(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_comment_lowercase_platform.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_comment(**kwargs):
+        observed.update(kwargs)
+        return {"variants": [{"text": "ok"}]}
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_comment", fake_generate_comment)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="comment-lowercase-platform@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "summary": "A short story summary.",
+        "platform": "twitter",
+        "style": "neutral",
+        "audience": "builders",
+        "max_variants": 1,
+        "fact_mode": True,
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-comment", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["platform"] == "Twitter"
+
+
+def test_generate_joke_accepts_lowercase_platform_and_string_fact_mode(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_joke_input_normalization.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_joke(**kwargs):
+        observed.update(kwargs)
+        return {
+            "best_variant_index": 0,
+            "warnings": [],
+            "jokes": [{"style": "pun", "setup": "s", "punchline": "p", "full_joke": "ok", "cta": "c"}],
+        }
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_joke", fake_generate_joke)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="joke-normalize@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "summary": "Summary for joke endpoint",
+        "platform": "twitter",
+        "style": "pun",
+        "audience": "general",
+        "max_variants": 1,
+        "fact_mode": "strict",
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-joke", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["platform"] == "Twitter"
+    assert observed["fact_mode"] is True

@@ -142,14 +142,17 @@ export default function ComposePage() {
       }
 
       switch (payload.action) {
-        case 'summary':
+        case 'summary': {
+          const parsedMaxLength = Number(payload.options.summary.maxLength);
+          const maxLength = Number.isFinite(parsedMaxLength) && parsedMaxLength >= 1
+            ? parsedMaxLength
+            : undefined;
           return generateSummaryFromText({
             text: payload.text,
             style: payload.options.summary.style,
-            max_length: payload.options.summary.maxLength
-              ? Number(payload.options.summary.maxLength)
-              : undefined,
+            max_length: maxLength,
           });
+        }
         case 'analysis':
           return generateAnalysisFromText({
             text: payload.text,
@@ -327,21 +330,32 @@ function buildDraftContent(result: ComposeResult) {
     }
     case 'viral': {
       const index = result.data.best_variant_index ?? 0;
-      const variant = result.data.variants[index];
+      const variant = result.data.variants[index] as
+        | { hook?: string; body?: string; hashtags?: string[]; thread?: string[]; text?: string }
+        | undefined;
       if (!variant) {
         return '';
       }
+      const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+      const body = variant.body || variant.text || '';
       const parts = [
         variant.hook,
-        variant.body,
-        variant.hashtags.length ? variant.hashtags.join(' ') : '',
-        variant.thread?.length ? `Thread:\n${variant.thread.join('\n')}` : '',
+        body,
+        hashtags.length ? hashtags.join(' ') : '',
+        variant.thread?.length ? `Thread:
+${variant.thread.join('\n')}` : '',
       ].filter(Boolean);
       return parts.join('\n\n');
     }
     case 'comment': {
       const index = result.data.best_variant_index ?? 0;
-      const comment = result.data.comments[index];
+      const comments = Array.isArray(result.data.comments)
+        ? result.data.comments
+        : ((result.data as { variants?: Array<{ text?: string }> }).variants || []).map((variant) => ({
+            comment: variant.text || '',
+            cta_question: '',
+          }));
+      const comment = comments[index];
       if (!comment) {
         return '';
       }
