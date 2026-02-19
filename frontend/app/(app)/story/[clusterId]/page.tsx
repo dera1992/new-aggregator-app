@@ -89,20 +89,76 @@ const commentAudienceOptions = [
   'Customers',
 ] as const;
 
-const buildViralCopy = (variant: {
-  hook: string;
-  body: string;
-  hashtags?: string[];
-  thread?: string[];
-}) => {
+const getViralBody = (variant: Record<string, unknown>) => {
+  if (typeof variant.body === 'string' && variant.body.trim()) {
+    return variant.body;
+  }
+  if (typeof variant.text === 'string') {
+    return variant.text;
+  }
+  return '';
+};
+
+const getViralVariants = (data: unknown) => {
+  if (!data || typeof data !== 'object') {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  const payload = data as { variants?: unknown[] };
+  return Array.isArray(payload.variants)
+    ? payload.variants.filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === 'object' && item !== null,
+      )
+    : [];
+};
+
+const buildViralCopy = (variant: Record<string, unknown>) => {
   const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
-  return `${variant.hook}\n\n${variant.body}` +
-    (variant.thread ? `\n\n${variant.thread.join('\\n')}` : '') +
+  const thread = Array.isArray(variant.thread) ? variant.thread : [];
+  return `${typeof variant.hook === 'string' ? variant.hook : ''}\n\n${getViralBody(variant)}` +
+    (thread.length ? `\n\n${thread.join('\\n')}` : '') +
     (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
 };
 
 const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
   [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
+
+const getCommentVariants = (data: unknown) => {
+  if (!data || typeof data !== 'object') {
+    return [] as Array<{ tone: string; comment: string; cta_question: string }>;
+  }
+
+  const payload = data as {
+    comments?: unknown[];
+    variants?: unknown[];
+  };
+
+  if (Array.isArray(payload.comments)) {
+    return payload.comments
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: typeof item.tone === 'string' ? item.tone : 'neutral',
+        comment: typeof item.comment === 'string' ? item.comment : '',
+        cta_question: typeof item.cta_question === 'string' ? item.cta_question : '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  if (Array.isArray(payload.variants)) {
+    return payload.variants
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: 'neutral',
+        comment: typeof item.text === 'string' ? item.text : '',
+        cta_question: '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  return [] as Array<{ tone: string; comment: string; cta_question: string }>;
+};
+
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
@@ -682,7 +738,11 @@ export default function StoryPage() {
                 )}
                 {viralMutation.data && (
                   <div className="space-y-4">
-                    {viralMutation.data.variants.map((variant, index) => (
+                    {getViralVariants(viralMutation.data).map((variant, index) => {
+                      const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+                      const thread = Array.isArray(variant.thread) ? variant.thread : [];
+                      const body = getViralBody(variant);
+                      return (
                       <Card key={index} className="w-full min-w-0">
                         <CardHeader>
                           <CardTitle className="text-base">
@@ -691,16 +751,16 @@ export default function StoryPage() {
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                           <div>
-                            <strong>Hook:</strong> {variant.hook}
+                            <strong>Hook:</strong> {typeof variant.hook === 'string' ? variant.hook : '—'}
                           </div>
                           <div>
-                            <strong>Body:</strong> {variant.body}
+                            <strong>Body:</strong> {body || '—'}
                           </div>
-                          {variant.thread && (
+                          {thread.length > 0 && (
                             <div>
                               <strong>Thread:</strong>
                               <ul className="list-disc pl-5">
-                                {variant.thread.map((line, threadIndex) => (
+                                {thread.map((line, threadIndex) => (
                                   <li key={threadIndex}>{line}</li>
                                 ))}
                               </ul>
@@ -708,7 +768,7 @@ export default function StoryPage() {
                           )}
                           <div>
                             <strong>Hashtags:</strong>{' '}
-                            {Array.isArray(variant.hashtags) ? variant.hashtags.join(' ') : 'None'}
+                            {hashtags.length > 0 ? hashtags.join(' ') : 'None'}
                           </div>
                           <CopyButton value={buildViralCopy(variant)} />
                           <ShareActions
@@ -717,7 +777,8 @@ export default function StoryPage() {
                           />
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -843,7 +904,7 @@ export default function StoryPage() {
                 )}
                 {commentMutation.data && (
                   <div className="space-y-4">
-                    {commentMutation.data.comments.map((comment, index) => (
+                    {getCommentVariants(commentMutation.data).map((comment, index) => (
                       <Card key={index} className="w-full min-w-0">
                         <CardHeader>
                           <CardTitle className="text-base">
