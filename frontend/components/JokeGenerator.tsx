@@ -42,6 +42,15 @@ type JokeGeneratorProps = {
   summary: string;
 };
 
+const jokeAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 const styleLabels: Record<JokeValues['style'], string> = {
   pun: 'Pun',
   one_liner: 'One-liner',
