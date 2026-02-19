@@ -34,8 +34,35 @@ import { ShareActions } from '@/components/share-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const viralAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Marketers',
+  'Developers',
+  'Executives',
+  'Investors',
+] as const;
+
+const viralBrandVoiceOptions = [
+  'clear and confident',
+  'bold and direct',
+  'professional and credible',
+  'friendly and conversational',
+  'witty and playful',
+] as const;
+
+const commentAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
+
 const viralSchema = z.object({
-  platform: z.enum(['Twitter', 'LinkedIn', 'Instagram']),
+  platform: z.enum(['twitter', 'linkedin', 'instagram']),
   tone: z.enum([
     'bold',
     'friendly',
@@ -44,7 +71,7 @@ const viralSchema = z.object({
     'controversial_light',
   ]),
   goal: z.enum(['engagement', 'clicks', 'followers', 'thought_leadership']),
-  audience: z.string().optional(),
+  audience: z.enum(viralAudienceOptions),
   brandVoice: z.string().optional(),
   maxVariants: z.number().min(1).max(5),
   factMode: z.boolean(),
@@ -62,18 +89,77 @@ const commentSchema = z.object({
 
 type CommentValues = z.infer<typeof commentSchema>;
 
-const buildViralCopy = (variant: {
-  hook: string;
-  body: string;
-  hashtags: string[];
-  thread?: string[];
-}) =>
-  `${variant.hook}\n\n${variant.body}` +
-  (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
-  `\n\n${variant.hashtags.join(' ')}`;
+
+const getViralBody = (variant: Record<string, unknown>) => {
+  if (typeof variant.body === 'string' && variant.body.trim()) {
+    return variant.body;
+  }
+  if (typeof variant.text === 'string') {
+    return variant.text;
+  }
+  return '';
+};
+
+const getViralVariants = (data: unknown) => {
+  if (!data || typeof data !== 'object') {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  const payload = data as { variants?: unknown[] };
+  return Array.isArray(payload.variants)
+    ? payload.variants.filter(
+        (item): item is Record<string, unknown> =>
+          typeof item === 'object' && item !== null,
+      )
+    : [];
+};
+
+const buildViralCopy = (variant: Record<string, unknown>) => {
+  const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+  const thread = Array.isArray(variant.thread) ? variant.thread : [];
+  return `${getViralBody(variant)}` +
+    (thread.length ? `\n\n${thread.join('\\n')}` : '') +
+    (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
+};
 
 const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
   [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
+
+const getCommentVariants = (data: unknown) => {
+  if (!data || typeof data !== 'object') {
+    return [] as Array<{ tone: string; comment: string; cta_question: string }>;
+  }
+
+  const payload = data as {
+    comments?: unknown[];
+    variants?: unknown[];
+  };
+
+  if (Array.isArray(payload.comments)) {
+    return payload.comments
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: typeof item.tone === 'string' ? item.tone : 'neutral',
+        comment: typeof item.comment === 'string' ? item.comment : '',
+        cta_question: typeof item.cta_question === 'string' ? item.cta_question : '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  if (Array.isArray(payload.variants)) {
+    return payload.variants
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: 'neutral',
+        comment: typeof item.text === 'string' ? item.text : '',
+        cta_question: '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  return [] as Array<{ tone: string; comment: string; cta_question: string }>;
+};
+
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
@@ -123,11 +209,13 @@ export default function StoryPage() {
   const viralForm = useForm<ViralValues>({
     resolver: zodResolver(viralSchema),
     defaultValues: {
-      platform: 'Twitter',
+      platform: 'twitter',
       tone: defaults.tone as ViralValues['tone'],
       goal: defaults.goal as ViralValues['goal'],
-      audience: defaults.audience,
-      brandVoice: defaults.brandVoice,
+      audience: viralAudienceOptions.includes(defaults.audience as (typeof viralAudienceOptions)[number])
+        ? (defaults.audience as (typeof viralAudienceOptions)[number])
+        : viralAudienceOptions[0],
+      brandVoice: defaults.brandVoice || viralBrandVoiceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -138,7 +226,7 @@ export default function StoryPage() {
     defaultValues: {
       platform: 'General',
       style: defaults.commentStyle as CommentValues['style'],
-      audience: defaults.commentAudience,
+      audience: defaults.commentAudience || commentAudienceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -147,13 +235,18 @@ export default function StoryPage() {
   useEffect(() => {
     viralForm.setValue('tone', defaults.tone as ViralValues['tone']);
     viralForm.setValue('goal', defaults.goal as ViralValues['goal']);
-    viralForm.setValue('audience', defaults.audience);
-    viralForm.setValue('brandVoice', defaults.brandVoice);
+    viralForm.setValue(
+      'audience',
+      viralAudienceOptions.includes(defaults.audience as (typeof viralAudienceOptions)[number])
+        ? (defaults.audience as (typeof viralAudienceOptions)[number])
+        : viralAudienceOptions[0],
+    );
+    viralForm.setValue('brandVoice', defaults.brandVoice || viralBrandVoiceOptions[0]);
     commentForm.setValue(
       'style',
       defaults.commentStyle as CommentValues['style'],
     );
-    commentForm.setValue('audience', defaults.commentAudience);
+    commentForm.setValue('audience', defaults.commentAudience || commentAudienceOptions[0]);
   }, [commentForm, defaults, viralForm]);
 
   const viralMutation = useMutation({
@@ -513,9 +606,9 @@ export default function StoryPage() {
                           <SelectValue placeholder="Platform" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -588,17 +681,43 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...viralForm.register('audience')}
-                      placeholder="Target audience"
-                    />
+                    <Select
+                      value={viralForm.watch('audience')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Brand voice</Label>
-                    <Input
-                      {...viralForm.register('brandVoice')}
-                      placeholder="Brand tone cues"
-                    />
+                    <Select
+                      value={viralForm.watch('brandVoice')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('brandVoice', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select brand voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralBrandVoiceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
@@ -627,7 +746,11 @@ export default function StoryPage() {
                 )}
                 {viralMutation.data && (
                   <div className="space-y-4">
-                    {viralMutation.data.variants.map((variant, index) => (
+                    {getViralVariants(viralMutation.data).map((variant, index) => {
+                      const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+                      const thread = Array.isArray(variant.thread) ? variant.thread : [];
+                      const body = getViralBody(variant);
+                      return (
                       <Card key={index} className="w-full min-w-0">
                         <CardHeader>
                           <CardTitle className="text-base">
@@ -636,16 +759,13 @@ export default function StoryPage() {
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                           <div>
-                            <strong>Hook:</strong> {variant.hook}
+                            <strong>Body:</strong> {body || '—'}
                           </div>
-                          <div>
-                            <strong>Body:</strong> {variant.body}
-                          </div>
-                          {variant.thread && (
+                          {thread.length > 0 && (
                             <div>
                               <strong>Thread:</strong>
                               <ul className="list-disc pl-5">
-                                {variant.thread.map((line, threadIndex) => (
+                                {thread.map((line, threadIndex) => (
                                   <li key={threadIndex}>{line}</li>
                                 ))}
                               </ul>
@@ -653,7 +773,7 @@ export default function StoryPage() {
                           )}
                           <div>
                             <strong>Hashtags:</strong>{' '}
-                            {variant.hashtags.join(' ')}
+                            {hashtags.length > 0 ? hashtags.join(' ') : 'None'}
                           </div>
                           <CopyButton value={buildViralCopy(variant)} />
                           <ShareActions
@@ -662,7 +782,8 @@ export default function StoryPage() {
                           />
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -696,8 +817,8 @@ export default function StoryPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="General">General</SelectItem>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
                           <SelectItem value="Facebook">Facebook</SelectItem>
                           <SelectItem value="Reddit">Reddit</SelectItem>
                         </SelectContent>
@@ -743,10 +864,23 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...commentForm.register('audience')}
-                      placeholder="Audience focus"
-                    />
+                    <Select
+                      value={commentForm.watch('audience')}
+                      onValueChange={(value) =>
+                        commentForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {commentAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
@@ -775,7 +909,7 @@ export default function StoryPage() {
                 )}
                 {commentMutation.data && (
                   <div className="space-y-4">
-                    {commentMutation.data.comments.map((comment, index) => (
+                    {getCommentVariants(commentMutation.data).map((comment, index) => (
                       <Card key={index} className="w-full min-w-0">
                         <CardHeader>
                           <CardTitle className="text-base">
