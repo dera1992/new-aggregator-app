@@ -53,12 +53,12 @@ export function MarketingPageTemplate({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="text-lg font-semibold tracking-tight text-[#4A90E2]"
+            className="font-heading text-lg font-semibold tracking-tight text-[#4A90E2]"
           >
             News Aggregator
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm font-medium text-[#333333] md:flex dark:text-slate-100">
+          <nav className="hidden items-center gap-8 text-sm font-medium tracking-wide text-[#333333] md:flex dark:text-slate-100">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
