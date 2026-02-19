@@ -99,6 +99,17 @@ const getViralBody = (variant: Record<string, unknown>) => {
   return '';
 };
 
+const getViralHook = (variant: Record<string, unknown>) => {
+  if (typeof variant.hook === 'string' && variant.hook.trim()) {
+    return variant.hook;
+  }
+  const body = getViralBody(variant);
+  if (!body) {
+    return '';
+  }
+  return body.split('\n')[0].slice(0, 120).trim();
+};
+
 const getViralVariants = (data: unknown) => {
   if (!data || typeof data !== 'object') {
     return [] as Array<Record<string, unknown>>;
@@ -116,7 +127,7 @@ const getViralVariants = (data: unknown) => {
 const buildViralCopy = (variant: Record<string, unknown>) => {
   const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
   const thread = Array.isArray(variant.thread) ? variant.thread : [];
-  return `${typeof variant.hook === 'string' ? variant.hook : ''}\n\n${getViralBody(variant)}` +
+  return `${getViralHook(variant)}\n\n${getViralBody(variant)}` +
     (thread.length ? `\n\n${thread.join('\\n')}` : '') +
     (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
 };
@@ -751,7 +762,7 @@ export default function StoryPage() {
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
                           <div>
-                            <strong>Hook:</strong> {typeof variant.hook === 'string' ? variant.hook : '—'}
+                            <strong>Hook:</strong> {getViralHook(variant) || '—'}
                           </div>
                           <div>
                             <strong>Body:</strong> {body || '—'}

@@ -65,6 +65,17 @@ function getViralBody(variant: Record<string, unknown>) {
   return '';
 }
 
+function getViralHook(variant: Record<string, unknown>) {
+  if (typeof variant.hook === 'string' && variant.hook.trim()) {
+    return variant.hook;
+  }
+  const body = getViralBody(variant);
+  if (!body) {
+    return '';
+  }
+  return body.split('\n')[0].slice(0, 120).trim();
+}
+
 function getViralVariants(result: ComposeResult) {
   if (result.type !== 'viral') {
     return [] as Array<Record<string, unknown>>;
@@ -113,7 +124,7 @@ function getCommentVariants(result: ComposeResult) {
 function buildViralCopy(variant: Record<string, unknown>) {
   const hashtags = getVariantHashtags(variant);
   const parts = [
-    typeof variant.hook === 'string' ? variant.hook : '',
+    getViralHook(variant),
     getViralBody(variant),
     hashtags.length ? hashtags.join(' ') : '',
     getVariantThread(variant).length ? `Thread:
@@ -265,7 +276,7 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                     {result.data.best_variant_index === index && <Badge>Best</Badge>}
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><span className="font-medium text-foreground">Hook:</span> {typeof variant.hook === 'string' ? variant.hook : '—'}</p>
+                    <p><span className="font-medium text-foreground">Hook:</span> {getViralHook(variant) || '—'}</p>
                     <p><span className="font-medium text-foreground">Body:</span> {getViralBody(variant) || '—'}</p>
                     {hashtags.length > 0 && (
                       <p><span className="font-medium text-foreground">Hashtags:</span> {hashtags.join(' ')}</p>
