@@ -243,22 +243,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="crystal-panel mx-auto max-w-5xl rounded-3xl bg-gradient-to-r from-[#4A90E2]/10 to-[#FF6600]/10 px-6 py-12 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
-            Ready to start?
-          </p>
-          <h3 className="font-heading mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Turn news overload into clear action</h3>
-          <p className="mt-3 text-slate-600 dark:text-slate-300">
-            Join today and build a faster workflow for monitoring, analysis, and publishing.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Button asChild className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]">
-              <Link href="/register">Create Your Free Account</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
     </MarketingPageTemplate>
   );
 }
