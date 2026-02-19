@@ -105,7 +105,7 @@ export default function HomePage() {
               variant="outline"
               className="border-[#4A90E2] text-[#4A90E2] hover:bg-[#4A90E2] hover:text-white"
             >
-              <Link href="#features">View Features</Link>
+              <Link href="/pricing">See Details</Link>
             </Button>
           </div>
           <div className="mt-8 grid gap-2 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-2">
