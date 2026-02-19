@@ -34,35 +34,6 @@ import { ShareActions } from '@/components/share-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const viralSchema = z.object({
-  platform: z.enum(['twitter', 'linkedin', 'instagram']),
-  tone: z.enum([
-    'bold',
-    'friendly',
-    'professional',
-    'funny',
-    'controversial_light',
-  ]),
-  goal: z.enum(['engagement', 'clicks', 'followers', 'thought_leadership']),
-  audience: z.string().optional(),
-  brandVoice: z.string().optional(),
-  maxVariants: z.number().min(1).max(5),
-  factMode: z.boolean(),
-});
-
-type ViralValues = z.infer<typeof viralSchema>;
-
-const commentSchema = z.object({
-  platform: z.enum(['General', 'Twitter', 'LinkedIn', 'Facebook', 'Reddit']),
-  style: z.enum(['curious', 'supportive', 'critical', 'neutral']),
-  audience: z.string().optional(),
-  maxVariants: z.number().min(1).max(5),
-  factMode: z.boolean(),
-});
-
-type CommentValues = z.infer<typeof commentSchema>;
-
-
 const viralAudienceOptions = [
   'General audience',
   'Founders',
@@ -89,6 +60,36 @@ const commentAudienceOptions = [
   'Customers',
 ] as const;
 
+
+const viralSchema = z.object({
+  platform: z.enum(['twitter', 'linkedin', 'instagram']),
+  tone: z.enum([
+    'bold',
+    'friendly',
+    'professional',
+    'funny',
+    'controversial_light',
+  ]),
+  goal: z.enum(['engagement', 'clicks', 'followers', 'thought_leadership']),
+  audience: z.enum(viralAudienceOptions),
+  brandVoice: z.string().optional(),
+  maxVariants: z.number().min(1).max(5),
+  factMode: z.boolean(),
+});
+
+type ViralValues = z.infer<typeof viralSchema>;
+
+const commentSchema = z.object({
+  platform: z.enum(['General', 'Twitter', 'LinkedIn', 'Facebook', 'Reddit']),
+  style: z.enum(['curious', 'supportive', 'critical', 'neutral']),
+  audience: z.string().optional(),
+  maxVariants: z.number().min(1).max(5),
+  factMode: z.boolean(),
+});
+
+type CommentValues = z.infer<typeof commentSchema>;
+
+
 const getViralBody = (variant: Record<string, unknown>) => {
   if (typeof variant.body === 'string' && variant.body.trim()) {
     return variant.body;
@@ -97,17 +98,6 @@ const getViralBody = (variant: Record<string, unknown>) => {
     return variant.text;
   }
   return '';
-};
-
-const getViralHook = (variant: Record<string, unknown>) => {
-  if (typeof variant.hook === 'string' && variant.hook.trim()) {
-    return variant.hook;
-  }
-  const body = getViralBody(variant);
-  if (!body) {
-    return '';
-  }
-  return body.split('\n')[0].slice(0, 120).trim();
 };
 
 const getViralVariants = (data: unknown) => {
@@ -127,7 +117,7 @@ const getViralVariants = (data: unknown) => {
 const buildViralCopy = (variant: Record<string, unknown>) => {
   const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
   const thread = Array.isArray(variant.thread) ? variant.thread : [];
-  return `${getViralHook(variant)}\n\n${getViralBody(variant)}` +
+  return `${getViralBody(variant)}` +
     (thread.length ? `\n\n${thread.join('\\n')}` : '') +
     (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
 };
@@ -222,7 +212,9 @@ export default function StoryPage() {
       platform: 'twitter',
       tone: defaults.tone as ViralValues['tone'],
       goal: defaults.goal as ViralValues['goal'],
-      audience: defaults.audience || viralAudienceOptions[0],
+      audience: viralAudienceOptions.includes(defaults.audience as (typeof viralAudienceOptions)[number])
+        ? (defaults.audience as (typeof viralAudienceOptions)[number])
+        : viralAudienceOptions[0],
       brandVoice: defaults.brandVoice || viralBrandVoiceOptions[0],
       maxVariants: 3,
       factMode: true,
@@ -243,7 +235,12 @@ export default function StoryPage() {
   useEffect(() => {
     viralForm.setValue('tone', defaults.tone as ViralValues['tone']);
     viralForm.setValue('goal', defaults.goal as ViralValues['goal']);
-    viralForm.setValue('audience', defaults.audience || viralAudienceOptions[0]);
+    viralForm.setValue(
+      'audience',
+      viralAudienceOptions.includes(defaults.audience as (typeof viralAudienceOptions)[number])
+        ? (defaults.audience as (typeof viralAudienceOptions)[number])
+        : viralAudienceOptions[0],
+    );
     viralForm.setValue('brandVoice', defaults.brandVoice || viralBrandVoiceOptions[0]);
     commentForm.setValue(
       'style',
@@ -761,9 +758,6 @@ export default function StoryPage() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2 text-sm">
-                          <div>
-                            <strong>Hook:</strong> {getViralHook(variant) || '—'}
-                          </div>
                           <div>
                             <strong>Body:</strong> {body || '—'}
                           </div>
