@@ -1,8 +1,6 @@
 {
-  "/(app)/compose/page": "app/(app)/compose/page.js",
-  "/(app)/read/page": "app/(app)/read/page.js",
+  "/page": "app/page.js",
   "/(app)/feed/page": "app/(app)/feed/page.js",
-  "/(app)/archive/page": "app/(app)/archive/page.js",
-  "/(app)/settings/page": "app/(app)/settings/page.js",
+  "/(app)/compose/page": "app/(app)/compose/page.js",
   "/(app)/story/[clusterId]/page": "app/(app)/story/[clusterId]/page.js"
 }
