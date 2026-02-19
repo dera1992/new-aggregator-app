@@ -22,6 +22,34 @@ from utils.decorators import token_required
 news_bp = Blueprint('news', __name__)
 
 
+def _normalize_fact_mode_value(value):
+    if isinstance(value, bool):
+        return "strict" if value else "balanced"
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        return cleaned or "strict"
+    return value
+
+
+def _normalize_joke_fact_mode(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        if cleaned in {"true", "1", "yes", "on", "strict"}:
+            return True
+        if cleaned in {"false", "0", "no", "off", "balanced"}:
+            return False
+    return value
+
+
+def _normalize_generation_payload(payload):
+    normalized = dict(payload)
+    if "fact_mode" in normalized:
+        normalized["fact_mode"] = _normalize_fact_mode_value(normalized.get("fact_mode"))
+    return normalized
+
+
 @news_bp.route('/api/news/feed', methods=['GET'])
 @token_required
 def get_clustered_feed():
@@ -193,10 +221,17 @@ def get_story(cluster_id):
     if not articles:
         return jsonify({"message": "Story not found"}), 404
 
+    primary_summary = (
+        articles[0].ai_summary
+        or articles[0].rss_summary
+        or " ".join((articles[0].raw_content or "").split()[:80]).strip()
+        or articles[0].title
+    )
+
     return jsonify({
         "cluster_id": cluster_id,
         "story_title": articles[0].title,
-        "summary": articles[0].ai_summary,
+        "summary": primary_summary,
         "sources": [
             {
                 "article_id": a.id,
@@ -212,7 +247,7 @@ def get_story(cluster_id):
 @news_bp.route('/api/news/generate-perspective', methods=['POST'])
 @token_required
 def generate_perspective_endpoint():
-    payload = request.get_json(silent=True) or {}
+    payload = _normalize_generation_payload(request.get_json(silent=True) or {})
     try:
         request_data = PerspectiveRequest.model_validate(payload)
     except ValidationError as exc:
@@ -370,6 +405,8 @@ def generate_viral_post_endpoint():
         payload = {**payload, "summary": summary_result["summary"]}
         payload.pop("text", None)
 
+    payload = _normalize_generation_payload(payload)
+
     try:
         request_data = ViralPostRequest.model_validate(payload)
     except ValidationError as exc:
@@ -431,6 +468,8 @@ def generate_comment_endpoint():
         payload = {**payload, "summary": summary_result["summary"]}
         payload.pop("text", None)
 
+    payload = _normalize_generation_payload(payload)
+
     try:
         request_data = CommentRequest.model_validate(payload)
     except ValidationError as exc:
@@ -470,6 +509,8 @@ def generate_comment_endpoint():
 @token_required
 def generate_joke_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "fact_mode" in payload:
+        payload["fact_mode"] = _normalize_joke_fact_mode(payload.get("fact_mode"))
     if "summary" not in payload and "text" in payload:
         try:
             paste_request = PasteTextRequest.model_validate(payload)
