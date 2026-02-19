@@ -684,7 +684,7 @@ export default function StoryPage() {
                     <Select
                       value={viralForm.watch('audience')}
                       onValueChange={(value) =>
-                        viralForm.setValue('audience', value)
+                        viralForm.setValue('audience', value as ViralValues['audience'])
                       }
                     >
                       <SelectTrigger>

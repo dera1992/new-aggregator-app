@@ -19,6 +19,15 @@ import { CopyButton } from '@/components/copy-button';
 import { ShareActions } from '@/components/share-actions';
 import type { GenerateJokeResponse } from '@/types/news';
 
+const jokeAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 const jokeSchema = z.object({
   platform: z.enum(['General', 'Twitter', 'LinkedIn', 'Instagram', 'Reddit']),
   style: z.enum(['pun', 'one_liner', 'observational', 'satire_light', 'dad_joke']),
