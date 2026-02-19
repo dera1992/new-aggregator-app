@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const viralSchema = z.object({
-  platform: z.enum(['Twitter', 'LinkedIn', 'Instagram']),
+  platform: z.enum(['twitter', 'linkedin', 'instagram']),
   tone: z.enum([
     'bold',
     'friendly',
@@ -62,15 +62,44 @@ const commentSchema = z.object({
 
 type CommentValues = z.infer<typeof commentSchema>;
 
+
+const viralAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Marketers',
+  'Developers',
+  'Executives',
+  'Investors',
+] as const;
+
+const viralBrandVoiceOptions = [
+  'clear and confident',
+  'bold and direct',
+  'professional and credible',
+  'friendly and conversational',
+  'witty and playful',
+] as const;
+
+const commentAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 const buildViralCopy = (variant: {
   hook: string;
   body: string;
-  hashtags: string[];
+  hashtags?: string[];
   thread?: string[];
-}) =>
-  `${variant.hook}\n\n${variant.body}` +
-  (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
-  `\n\n${variant.hashtags.join(' ')}`;
+}) => {
+  const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+  return `${variant.hook}\n\n${variant.body}` +
+    (variant.thread ? `\n\n${variant.thread.join('\\n')}` : '') +
+    (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
+};
 
 const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
   [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
@@ -123,11 +152,11 @@ export default function StoryPage() {
   const viralForm = useForm<ViralValues>({
     resolver: zodResolver(viralSchema),
     defaultValues: {
-      platform: 'Twitter',
+      platform: 'twitter',
       tone: defaults.tone as ViralValues['tone'],
       goal: defaults.goal as ViralValues['goal'],
-      audience: defaults.audience,
-      brandVoice: defaults.brandVoice,
+      audience: defaults.audience || viralAudienceOptions[0],
+      brandVoice: defaults.brandVoice || viralBrandVoiceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -138,7 +167,7 @@ export default function StoryPage() {
     defaultValues: {
       platform: 'General',
       style: defaults.commentStyle as CommentValues['style'],
-      audience: defaults.commentAudience,
+      audience: defaults.commentAudience || commentAudienceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -147,13 +176,13 @@ export default function StoryPage() {
   useEffect(() => {
     viralForm.setValue('tone', defaults.tone as ViralValues['tone']);
     viralForm.setValue('goal', defaults.goal as ViralValues['goal']);
-    viralForm.setValue('audience', defaults.audience);
-    viralForm.setValue('brandVoice', defaults.brandVoice);
+    viralForm.setValue('audience', defaults.audience || viralAudienceOptions[0]);
+    viralForm.setValue('brandVoice', defaults.brandVoice || viralBrandVoiceOptions[0]);
     commentForm.setValue(
       'style',
       defaults.commentStyle as CommentValues['style'],
     );
-    commentForm.setValue('audience', defaults.commentAudience);
+    commentForm.setValue('audience', defaults.commentAudience || commentAudienceOptions[0]);
   }, [commentForm, defaults, viralForm]);
 
   const viralMutation = useMutation({
@@ -513,9 +542,9 @@ export default function StoryPage() {
                           <SelectValue placeholder="Platform" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -588,17 +617,43 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...viralForm.register('audience')}
-                      placeholder="Target audience"
-                    />
+                    <Select
+                      value={viralForm.watch('audience')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Brand voice</Label>
-                    <Input
-                      {...viralForm.register('brandVoice')}
-                      placeholder="Brand tone cues"
-                    />
+                    <Select
+                      value={viralForm.watch('brandVoice')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('brandVoice', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select brand voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralBrandVoiceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
@@ -653,7 +708,7 @@ export default function StoryPage() {
                           )}
                           <div>
                             <strong>Hashtags:</strong>{' '}
-                            {variant.hashtags.join(' ')}
+                            {Array.isArray(variant.hashtags) ? variant.hashtags.join(' ') : 'None'}
                           </div>
                           <CopyButton value={buildViralCopy(variant)} />
                           <ShareActions
@@ -696,8 +751,8 @@ export default function StoryPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="General">General</SelectItem>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
                           <SelectItem value="Facebook">Facebook</SelectItem>
                           <SelectItem value="Reddit">Reddit</SelectItem>
                         </SelectContent>
@@ -743,10 +798,23 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...commentForm.register('audience')}
-                      placeholder="Audience focus"
-                    />
+                    <Select
+                      value={commentForm.watch('audience')}
+                      onValueChange={(value) =>
+                        commentForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {commentAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>

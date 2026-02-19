@@ -44,12 +44,18 @@ function buildAnalysisCopy(variant: GenerateAnalysisResponse['variants'][number]
   return parts.join('\n\n');
 }
 
+function getVariantHashtags(variant: ViralPostResponse['variants'][number]) {
+  return Array.isArray(variant.hashtags) ? variant.hashtags : [];
+}
+
 function buildViralCopy(variant: ViralPostResponse['variants'][number]) {
+  const hashtags = getVariantHashtags(variant);
   const parts = [
     variant.hook,
     variant.body,
-    variant.hashtags.length ? variant.hashtags.join(' ') : '',
-    variant.thread?.length ? `Thread:\n${variant.thread.join('\n')}` : '',
+    hashtags.length ? hashtags.join(' ') : '',
+    variant.thread?.length ? `Thread:
+${variant.thread.join('\n')}` : '',
   ].filter(Boolean);
   return parts.join('\n\n');
 }
@@ -188,7 +194,9 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
               ))}
 
             {result.type === 'viral' &&
-              result.data.variants.map((variant, index) => (
+              result.data.variants.map((variant, index) => {
+                const hashtags = getVariantHashtags(variant);
+                return (
                 <div key={`${variant.hook}-${index}`} className="space-y-3 rounded-md border border-border p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Variant {index + 1}</p>
@@ -197,8 +205,8 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p><span className="font-medium text-foreground">Hook:</span> {variant.hook}</p>
                     <p><span className="font-medium text-foreground">Body:</span> {variant.body}</p>
-                    {variant.hashtags.length > 0 && (
-                      <p><span className="font-medium text-foreground">Hashtags:</span> {variant.hashtags.join(' ')}</p>
+                    {hashtags.length > 0 && (
+                      <p><span className="font-medium text-foreground">Hashtags:</span> {hashtags.join(' ')}</p>
                     )}
                     {variant.thread?.length ? (
                       <div>
@@ -213,8 +221,8 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <CopyButton value={buildViralCopy(variant)} />
-                    {variant.hashtags.length > 0 && (
-                      <CopyButton value={variant.hashtags.join(' ')} />
+                    {hashtags.length > 0 && (
+                      <CopyButton value={hashtags.join(' ')} />
                     )}
                     {variant.thread?.length ? (
                       <CopyButton value={variant.thread.join('\n')} />
@@ -225,7 +233,8 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                     text={buildViralCopy(variant)}
                   />
                 </div>
-              ))}
+                );
+              })}
 
             {result.type === 'comment' &&
               result.data.comments.map((comment, index) => (
