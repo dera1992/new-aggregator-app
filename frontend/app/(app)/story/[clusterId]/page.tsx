@@ -92,12 +92,14 @@ const commentAudienceOptions = [
 const buildViralCopy = (variant: {
   hook: string;
   body: string;
-  hashtags: string[];
+  hashtags?: string[];
   thread?: string[];
-}) =>
-  `${variant.hook}\n\n${variant.body}` +
-  (variant.thread ? `\n\n${variant.thread.join('\n')}` : '') +
-  `\n\n${variant.hashtags.join(' ')}`;
+}) => {
+  const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
+  return `${variant.hook}\n\n${variant.body}` +
+    (variant.thread ? `\n\n${variant.thread.join('\\n')}` : '') +
+    (hashtags.length ? `\n\n${hashtags.join(' ')}` : '');
+};
 
 const buildCommentCopy = (comment: { comment: string; cta_question: string }) =>
   [comment.comment, comment.cta_question].filter(Boolean).join('\n\n');
@@ -706,7 +708,7 @@ export default function StoryPage() {
                           )}
                           <div>
                             <strong>Hashtags:</strong>{' '}
-                            {variant.hashtags.join(' ')}
+                            {Array.isArray(variant.hashtags) ? variant.hashtags.join(' ') : 'None'}
                           </div>
                           <CopyButton value={buildViralCopy(variant)} />
                           <ShareActions
