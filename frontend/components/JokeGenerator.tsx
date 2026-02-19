@@ -19,10 +19,19 @@ import { CopyButton } from '@/components/copy-button';
 import { ShareActions } from '@/components/share-actions';
 import type { GenerateJokeResponse } from '@/types/news';
 
+const jokeAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 const jokeSchema = z.object({
   platform: z.enum(['General', 'Twitter', 'LinkedIn', 'Instagram', 'Reddit']),
   style: z.enum(['pun', 'one_liner', 'observational', 'satire_light', 'dad_joke']),
-  audience: z.string().optional(),
+  audience: z.enum(jokeAudienceOptions),
   maxVariants: z.number().min(1).max(5),
   factMode: z.boolean(),
 });
@@ -47,7 +56,7 @@ export function JokeGenerator({ summary }: JokeGeneratorProps) {
     defaultValues: {
       platform: 'General',
       style: 'one_liner',
-      audience: '',
+      audience: jokeAudienceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -148,7 +157,23 @@ export function JokeGenerator({ summary }: JokeGeneratorProps) {
           </div>
           <div className="space-y-2">
             <Label>Audience</Label>
-            <Input {...form.register('audience')} placeholder="Optional audience" />
+            <Select
+              value={form.watch('audience')}
+              onValueChange={(value) =>
+                form.setValue('audience', value as JokeValues['audience'])
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select audience" />
+              </SelectTrigger>
+              <SelectContent>
+                {jokeAudienceOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div>

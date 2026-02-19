@@ -25,15 +25,30 @@ async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let message = response.statusText;
     if (typeof data === 'object' && data) {
+      const errors =
+        'errors' in data && Array.isArray((data as { errors: unknown }).errors)
+          ? (data as { errors: Array<{ msg?: string; loc?: Array<string | number> }> }).errors
+          : [];
+      const formattedErrors = errors
+        .map((error) => {
+          const detail = error.msg?.trim();
+          if (!detail) {
+            return '';
+          }
+          const fieldPath = Array.isArray(error.loc)
+            ? error.loc.filter((part) => typeof part === 'string').join('.')
+            : '';
+          return fieldPath ? `${fieldPath}: ${detail}` : detail;
+        })
+        .filter(Boolean);
+
       if ('message' in data) {
         message = String((data as { message: string }).message);
-      } else if ('errors' in data && Array.isArray((data as { errors: unknown }).errors)) {
-        const errors = (data as { errors: Array<{ msg?: string }> }).errors
-          .map((error) => error.msg)
-          .filter(Boolean);
-        if (errors.length) {
-          message = errors.join(' ');
+        if (formattedErrors.length && message.toLowerCase().includes('invalid request payload')) {
+          message = `${message} ${formattedErrors.join(' ')}`;
         }
+      } else if (formattedErrors.length) {
+        message = formattedErrors.join(' ');
       }
     }
 
