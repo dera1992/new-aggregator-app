@@ -339,7 +339,6 @@ function buildDraftContent(result: ComposeResult) {
       const hashtags = Array.isArray(variant.hashtags) ? variant.hashtags : [];
       const body = variant.body || variant.text || '';
       const parts = [
-        variant.hook,
         body,
         hashtags.length ? hashtags.join(' ') : '',
         variant.thread?.length ? `Thread:

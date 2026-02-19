@@ -65,16 +65,6 @@ function getViralBody(variant: Record<string, unknown>) {
   return '';
 }
 
-function getViralHook(variant: Record<string, unknown>) {
-  if (typeof variant.hook === 'string' && variant.hook.trim()) {
-    return variant.hook;
-  }
-  const body = getViralBody(variant);
-  if (!body) {
-    return '';
-  }
-  return body.split('\n')[0].slice(0, 120).trim();
-}
 
 function getViralVariants(result: ComposeResult) {
   if (result.type !== 'viral') {
@@ -124,7 +114,6 @@ function getCommentVariants(result: ComposeResult) {
 function buildViralCopy(variant: Record<string, unknown>) {
   const hashtags = getVariantHashtags(variant);
   const parts = [
-    getViralHook(variant),
     getViralBody(variant),
     hashtags.length ? hashtags.join(' ') : '',
     getVariantThread(variant).length ? `Thread:
@@ -270,13 +259,12 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
               getViralVariants(result).map((variant, index) => {
                 const hashtags = getVariantHashtags(variant);
                 return (
-                  <div key={`${typeof variant.hook === 'string' ? variant.hook : '—'}-${index}`} className="space-y-3 rounded-md border border-border p-4">
+                  <div key={`${getViralBody(variant) || 'viral'}-${index}`} className="space-y-3 rounded-md border border-border p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Variant {index + 1}</p>
                     {result.data.best_variant_index === index && <Badge>Best</Badge>}
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><span className="font-medium text-foreground">Hook:</span> {getViralHook(variant) || '—'}</p>
                     <p><span className="font-medium text-foreground">Body:</span> {getViralBody(variant) || '—'}</p>
                     {hashtags.length > 0 && (
                       <p><span className="font-medium text-foreground">Hashtags:</span> {hashtags.join(' ')}</p>

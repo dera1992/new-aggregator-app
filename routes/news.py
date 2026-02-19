@@ -31,6 +31,18 @@ def _normalize_fact_mode_value(value):
     return value
 
 
+def _normalize_joke_fact_mode(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        cleaned = value.strip().lower()
+        if cleaned in {"true", "1", "yes", "on", "strict"}:
+            return True
+        if cleaned in {"false", "0", "no", "off", "balanced"}:
+            return False
+    return value
+
+
 def _normalize_generation_payload(payload):
     normalized = dict(payload)
     if "fact_mode" in normalized:
@@ -497,6 +509,8 @@ def generate_comment_endpoint():
 @token_required
 def generate_joke_endpoint():
     payload = request.get_json(silent=True) or {}
+    if "fact_mode" in payload:
+        payload["fact_mode"] = _normalize_joke_fact_mode(payload.get("fact_mode"))
     if "summary" not in payload and "text" in payload:
         try:
             paste_request = PasteTextRequest.model_validate(payload)

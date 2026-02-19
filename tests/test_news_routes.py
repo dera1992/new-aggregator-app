@@ -803,3 +803,59 @@ def test_generate_joke_accepts_boolean_fact_mode(tmp_path, monkeypatch):
 
     assert observed["platform"] == "Twitter"
     assert observed["fact_mode"] is False
+
+
+def test_generate_joke_accepts_balanced_string_fact_mode(tmp_path, monkeypatch):
+    repo_root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(repo_root))
+    db_path = Path(tmp_path) / "test_joke_balanced_fact_mode.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret")
+    monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
+
+    app_module = importlib.import_module("app")
+    importlib.reload(app_module)
+
+    app = app_module.app
+    db = app_module.db
+    User = importlib.import_module("models.models").User
+
+    observed = {}
+
+    def fake_generate_joke(**kwargs):
+        observed.update(kwargs)
+        return {
+            "best_variant_index": 0,
+            "warnings": [],
+            "jokes": [{"style": "pun", "setup": "s", "punchline": "p", "full_joke": "ok", "cta": "c"}],
+        }
+
+    news_module = importlib.import_module("routes.news")
+    monkeypatch.setattr(news_module, "generate_joke", fake_generate_joke)
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        user = User(email="joke-balanced@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    token = jwt.encode({"user_id": user_id}, app.config["SECRET_KEY"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "summary": "Summary for joke endpoint",
+        "platform": "twitter",
+        "style": "pun",
+        "audience": "general",
+        "max_variants": 1,
+        "fact_mode": "balanced",
+    }
+
+    with app.test_client() as client:
+        response = client.post("/api/news/generate-joke", json=payload, headers=headers)
+        assert response.status_code == 200
+
+    assert observed["platform"] == "Twitter"
+    assert observed["fact_mode"] is False
