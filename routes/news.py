@@ -531,6 +531,8 @@ def generate_joke_endpoint():
         payload = {**payload, "summary": summary_result["summary"]}
         payload.pop("text", None)
 
+    payload = _normalize_generation_payload(payload)
+
     try:
         request_data = JokeRequest.model_validate(payload)
     except ValidationError as exc:
