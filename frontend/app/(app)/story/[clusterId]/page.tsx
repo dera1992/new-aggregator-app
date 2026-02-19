@@ -62,6 +62,33 @@ const commentSchema = z.object({
 
 type CommentValues = z.infer<typeof commentSchema>;
 
+
+const viralAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Marketers',
+  'Developers',
+  'Executives',
+  'Investors',
+] as const;
+
+const viralBrandVoiceOptions = [
+  'clear and confident',
+  'bold and direct',
+  'professional and credible',
+  'friendly and conversational',
+  'witty and playful',
+] as const;
+
+const commentAudienceOptions = [
+  'General audience',
+  'Founders',
+  'Creators',
+  'Developers',
+  'Investors',
+  'Customers',
+] as const;
+
 const buildViralCopy = (variant: {
   hook: string;
   body: string;
@@ -126,8 +153,8 @@ export default function StoryPage() {
       platform: 'Twitter',
       tone: defaults.tone as ViralValues['tone'],
       goal: defaults.goal as ViralValues['goal'],
-      audience: defaults.audience,
-      brandVoice: defaults.brandVoice,
+      audience: defaults.audience || viralAudienceOptions[0],
+      brandVoice: defaults.brandVoice || viralBrandVoiceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -138,7 +165,7 @@ export default function StoryPage() {
     defaultValues: {
       platform: 'General',
       style: defaults.commentStyle as CommentValues['style'],
-      audience: defaults.commentAudience,
+      audience: defaults.commentAudience || commentAudienceOptions[0],
       maxVariants: 3,
       factMode: true,
     },
@@ -147,13 +174,13 @@ export default function StoryPage() {
   useEffect(() => {
     viralForm.setValue('tone', defaults.tone as ViralValues['tone']);
     viralForm.setValue('goal', defaults.goal as ViralValues['goal']);
-    viralForm.setValue('audience', defaults.audience);
-    viralForm.setValue('brandVoice', defaults.brandVoice);
+    viralForm.setValue('audience', defaults.audience || viralAudienceOptions[0]);
+    viralForm.setValue('brandVoice', defaults.brandVoice || viralBrandVoiceOptions[0]);
     commentForm.setValue(
       'style',
       defaults.commentStyle as CommentValues['style'],
     );
-    commentForm.setValue('audience', defaults.commentAudience);
+    commentForm.setValue('audience', defaults.commentAudience || commentAudienceOptions[0]);
   }, [commentForm, defaults, viralForm]);
 
   const viralMutation = useMutation({
@@ -588,17 +615,43 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...viralForm.register('audience')}
-                      placeholder="Target audience"
-                    />
+                    <Select
+                      value={viralForm.watch('audience')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Brand voice</Label>
-                    <Input
-                      {...viralForm.register('brandVoice')}
-                      placeholder="Brand tone cues"
-                    />
+                    <Select
+                      value={viralForm.watch('brandVoice')}
+                      onValueChange={(value) =>
+                        viralForm.setValue('brandVoice', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select brand voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viralBrandVoiceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
@@ -743,10 +796,23 @@ export default function StoryPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Audience</Label>
-                    <Input
-                      {...commentForm.register('audience')}
-                      placeholder="Audience focus"
-                    />
+                    <Select
+                      value={commentForm.watch('audience')}
+                      onValueChange={(value) =>
+                        commentForm.setValue('audience', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {commentAudienceOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center justify-between rounded-md border border-border p-3">
                     <div>
