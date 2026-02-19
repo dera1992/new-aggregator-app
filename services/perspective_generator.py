@@ -40,6 +40,95 @@ def _safe_json_loads(payload: str) -> dict[str, Any]:
             raise PerspectiveError("Model did not return valid JSON.") from exc
 
 
+def _bias_label_from_value(value: float) -> str:
+    if value <= -0.2:
+        return "left"
+    if value >= 0.2:
+        return "right"
+    return "neutral"
+
+
+def _normalize_angles(raw_angles: Any) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+
+    if isinstance(raw_angles, list):
+        for angle in raw_angles:
+            if isinstance(angle, dict):
+                item = dict(angle)
+                if not item.get("label"):
+                    item["label"] = "Perspective"
+                if not item.get("summary"):
+                    key_points = item.get("key_points")
+                    if isinstance(key_points, list) and key_points:
+                        item["summary"] = " ".join(str(part) for part in key_points if part)
+                    elif isinstance(item.get("text"), str):
+                        item["summary"] = item["text"]
+                    else:
+                        item["summary"] = "No summary provided."
+                normalized.append(item)
+            elif isinstance(angle, str):
+                normalized.append({"label": "Perspective", "summary": angle})
+        return normalized
+
+    if isinstance(raw_angles, dict):
+        normalized: list[dict[str, Any]] = []
+        for label, content in raw_angles.items():
+            if isinstance(content, dict):
+                item = {"label": str(label), **content}
+            elif isinstance(content, list):
+                summary = " ".join(str(part) for part in content if part)
+                item = {"label": str(label), "summary": summary, "key_points": content}
+            else:
+                item = {"label": str(label), "summary": str(content)}
+            normalized.append(item)
+        return normalized
+
+    return normalized
+
+
+def _normalize_sources(raw_sources: Any, fallback_sources: list[dict[str, Any]]) -> list[dict[str, str]]:
+    cleaned_fallback: list[dict[str, str]] = []
+    for source in fallback_sources:
+        if not isinstance(source, dict):
+            continue
+        url = source.get("url")
+        if not isinstance(url, str) or not url.strip():
+            continue
+        cleaned_fallback.append({"name": str(source.get("name") or "Unknown"), "url": url})
+
+    if not isinstance(raw_sources, list):
+        return cleaned_fallback
+
+    normalized: list[dict[str, str]] = []
+    for entry in raw_sources:
+        if isinstance(entry, str):
+            normalized.append({"name": "Unknown", "url": entry})
+            continue
+        if isinstance(entry, dict):
+            url = entry.get("url")
+            if not url:
+                continue
+            normalized.append({"name": entry.get("name") or "Unknown", "url": url})
+
+    return normalized or cleaned_fallback
+
+
+def _normalize_perspective_payload(data: dict[str, Any], *, fallback_sources: list[dict[str, Any]]) -> dict[str, Any]:
+    normalized = dict(data)
+    normalized["angles"] = _normalize_angles(normalized.get("angles"))
+
+    scores = normalized.get("scores")
+    if isinstance(scores, dict):
+        bias = scores.get("bias")
+        if isinstance(bias, dict):
+            value = bias.get("value")
+            if isinstance(value, (int, float)) and not bias.get("label"):
+                bias["label"] = _bias_label_from_value(float(value))
+
+    normalized["sources"] = _normalize_sources(normalized.get("sources"), fallback_sources)
+    return normalized
+
+
 def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[str, Any]:
     articles = (
         Article.query.filter(Article.cluster_id == cluster_id)
@@ -54,6 +143,8 @@ def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[s
     for article in articles:
         source_key = article.source_url or f"{article.source_domain}:{article.id}"
         if source_key in source_lookup:
+            continue
+        if not article.source_url:
             continue
         source_lookup[source_key] = {
             "name": article.source_domain or "Unknown",
@@ -109,6 +200,7 @@ def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[s
 
     content = response.choices[0].message.content or ""
     data = _safe_json_loads(content)
+    data = _normalize_perspective_payload(data, fallback_sources=list(source_lookup.values()))
     data["cluster_id"] = cluster_id
     data.setdefault("sources", list(source_lookup.values()))
     data["generated_at"] = datetime.now(timezone.utc).isoformat()

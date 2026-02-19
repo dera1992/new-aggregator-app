@@ -193,10 +193,17 @@ def get_story(cluster_id):
     if not articles:
         return jsonify({"message": "Story not found"}), 404
 
+    primary_summary = (
+        articles[0].ai_summary
+        or articles[0].rss_summary
+        or " ".join((articles[0].raw_content or "").split()[:80]).strip()
+        or articles[0].title
+    )
+
     return jsonify({
         "cluster_id": cluster_id,
         "story_title": articles[0].title,
-        "summary": articles[0].ai_summary,
+        "summary": primary_summary,
         "sources": [
             {
                 "article_id": a.id,

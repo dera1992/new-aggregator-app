@@ -142,14 +142,17 @@ export default function ComposePage() {
       }
 
       switch (payload.action) {
-        case 'summary':
+        case 'summary': {
+          const parsedMaxLength = Number(payload.options.summary.maxLength);
+          const maxLength = Number.isFinite(parsedMaxLength) && parsedMaxLength >= 1
+            ? parsedMaxLength
+            : undefined;
           return generateSummaryFromText({
             text: payload.text,
             style: payload.options.summary.style,
-            max_length: payload.options.summary.maxLength
-              ? Number(payload.options.summary.maxLength)
-              : undefined,
+            max_length: maxLength,
           });
+        }
         case 'analysis':
           return generateAnalysisFromText({
             text: payload.text,
