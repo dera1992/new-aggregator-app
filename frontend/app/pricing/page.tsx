@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { MarketingPageTemplate } from '@/components/marketing-page-template';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -11,6 +12,13 @@ type PricingPlan = {
   features: string[];
   highlighted?: boolean;
 };
+
+const navLinks = [
+  { href: '/#home', label: 'Home' },
+  { href: '/#features', label: 'Features' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/#about', label: 'About' },
+];
 
 const plans: PricingPlan[] = [
   {
@@ -43,61 +51,56 @@ const plans: PricingPlan[] = [
 
 export default function PricingPage() {
   return (
-    <main className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
-      <Button
-        asChild
-        variant="outline"
-        className="absolute left-4 top-6 sm:left-6 lg:left-8"
-      >
-        <Link href="/">← Back to Home</Link>
-      </Button>
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
-          Pricing
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold">
-          Simple pricing for every stage
-        </h1>
-        <p className="mt-3 text-base text-muted-foreground">
-          Pick a plan that matches your workflow. Upgrade any time as your
-          publishing needs grow.
-        </p>
-      </div>
+    <MarketingPageTemplate navLinks={navLinks}>
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
+            Pricing
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold">
+            Simple pricing for every stage
+          </h1>
+          <p className="mt-3 text-base text-muted-foreground">
+            Pick a plan that matches your workflow. Upgrade any time as your
+            publishing needs grow.
+          </p>
+        </div>
 
-      <div className="mt-10 grid gap-6 md:grid-cols-3">
-        {plans.map((plan) => (
-          <Card
-            key={plan.name}
-            className={plan.highlighted ? 'border-[#4A90E2] shadow-md' : ''}
-          >
-            <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
-              <div className="mt-2 flex items-end gap-1">
-                <span className="text-3xl font-semibold">{plan.price}</span>
-                <span className="text-sm text-muted-foreground">
-                  {plan.period}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {plan.description}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {plan.features.map((feature) => (
-                  <li key={feature}>• {feature}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
+          {plans.map((plan) => (
+            <Card
+              key={plan.name}
+              className={plan.highlighted ? 'border-[#4A90E2] shadow-md' : ''}
+            >
+              <CardHeader>
+                <CardTitle>{plan.name}</CardTitle>
+                <div className="mt-2 flex items-end gap-1">
+                  <span className="text-3xl font-semibold">{plan.price}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {plan.period}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {plan.description}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {plan.features.map((feature) => (
+                    <li key={feature}>• {feature}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-        <Button asChild className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]">
-          <Link href="/register">Start Free Trial</Link>
-        </Button>
-      </div>
-    </main>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]">
+            <Link href="/register">Start Free Trial</Link>
+          </Button>
+        </div>
+      </section>
+    </MarketingPageTemplate>
   );
 }
