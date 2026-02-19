@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const viralSchema = z.object({
-  platform: z.enum(['Twitter', 'LinkedIn', 'Instagram']),
+  platform: z.enum(['twitter', 'linkedin', 'instagram']),
   tone: z.enum([
     'bold',
     'friendly',
@@ -150,7 +150,7 @@ export default function StoryPage() {
   const viralForm = useForm<ViralValues>({
     resolver: zodResolver(viralSchema),
     defaultValues: {
-      platform: 'Twitter',
+      platform: 'twitter',
       tone: defaults.tone as ViralValues['tone'],
       goal: defaults.goal as ViralValues['goal'],
       audience: defaults.audience || viralAudienceOptions[0],
@@ -540,9 +540,9 @@ export default function StoryPage() {
                           <SelectValue placeholder="Platform" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="Instagram">Instagram</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -749,8 +749,8 @@ export default function StoryPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="General">General</SelectItem>
-                          <SelectItem value="Twitter">Twitter</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                          <SelectItem value="twitter">Twitter</SelectItem>
+                          <SelectItem value="linkedin">LinkedIn</SelectItem>
                           <SelectItem value="Facebook">Facebook</SelectItem>
                           <SelectItem value="Reddit">Reddit</SelectItem>
                         </SelectContent>

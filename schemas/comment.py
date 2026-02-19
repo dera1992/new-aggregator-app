@@ -12,6 +12,20 @@ class CommentRequest(BaseModel):
     fact_mode: str = Field("strict", min_length=1)
     force_refresh: bool = False
 
+    @field_validator("platform", mode="before")
+    @classmethod
+    def normalize_platform(cls, value: object) -> str:
+        if not isinstance(value, str):
+            return "General"
+        lookup = {
+            "general": "General",
+            "twitter": "Twitter",
+            "linkedin": "LinkedIn",
+            "facebook": "Facebook",
+            "reddit": "Reddit",
+        }
+        return lookup.get(value.strip().lower(), value)
+
     @field_validator("fact_mode", mode="before")
     @classmethod
     def normalize_fact_mode(cls, value: object) -> str:

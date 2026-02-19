@@ -49,8 +49,26 @@ def _bias_label_from_value(value: float) -> str:
 
 
 def _normalize_angles(raw_angles: Any) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+
     if isinstance(raw_angles, list):
-        return [angle for angle in raw_angles if isinstance(angle, dict)]
+        for angle in raw_angles:
+            if isinstance(angle, dict):
+                item = dict(angle)
+                if not item.get("label"):
+                    item["label"] = "Perspective"
+                if not item.get("summary"):
+                    key_points = item.get("key_points")
+                    if isinstance(key_points, list) and key_points:
+                        item["summary"] = " ".join(str(part) for part in key_points if part)
+                    elif isinstance(item.get("text"), str):
+                        item["summary"] = item["text"]
+                    else:
+                        item["summary"] = "No summary provided."
+                normalized.append(item)
+            elif isinstance(angle, str):
+                normalized.append({"label": "Perspective", "summary": angle})
+        return normalized
 
     if isinstance(raw_angles, dict):
         normalized: list[dict[str, Any]] = []
@@ -65,12 +83,21 @@ def _normalize_angles(raw_angles: Any) -> list[dict[str, Any]]:
             normalized.append(item)
         return normalized
 
-    return []
+    return normalized
 
 
 def _normalize_sources(raw_sources: Any, fallback_sources: list[dict[str, Any]]) -> list[dict[str, str]]:
+    cleaned_fallback: list[dict[str, str]] = []
+    for source in fallback_sources:
+        if not isinstance(source, dict):
+            continue
+        url = source.get("url")
+        if not isinstance(url, str) or not url.strip():
+            continue
+        cleaned_fallback.append({"name": str(source.get("name") or "Unknown"), "url": url})
+
     if not isinstance(raw_sources, list):
-        return fallback_sources
+        return cleaned_fallback
 
     normalized: list[dict[str, str]] = []
     for entry in raw_sources:
@@ -83,7 +110,7 @@ def _normalize_sources(raw_sources: Any, fallback_sources: list[dict[str, Any]])
                 continue
             normalized.append({"name": entry.get("name") or "Unknown", "url": url})
 
-    return normalized or fallback_sources
+    return normalized or cleaned_fallback
 
 
 def _normalize_perspective_payload(data: dict[str, Any], *, fallback_sources: list[dict[str, Any]]) -> dict[str, Any]:
@@ -116,6 +143,8 @@ def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[s
     for article in articles:
         source_key = article.source_url or f"{article.source_domain}:{article.id}"
         if source_key in source_lookup:
+            continue
+        if not article.source_url:
             continue
         source_lookup[source_key] = {
             "name": article.source_domain or "Unknown",
