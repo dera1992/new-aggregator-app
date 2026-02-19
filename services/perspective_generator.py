@@ -122,10 +122,52 @@ def _normalize_perspective_payload(data: dict[str, Any], *, fallback_sources: li
         bias = scores.get("bias")
         if isinstance(bias, dict):
             value = bias.get("value")
-            if isinstance(value, (int, float)) and not bias.get("label"):
-                bias["label"] = _bias_label_from_value(float(value))
+            parsed_value: float | None = None
+            if isinstance(value, (int, float)):
+                parsed_value = float(value)
+            elif isinstance(value, str):
+                try:
+                    parsed_value = float(value)
+                    bias["value"] = parsed_value
+                except ValueError:
+                    parsed_value = None
+            if parsed_value is not None and not bias.get("label"):
+                bias["label"] = _bias_label_from_value(parsed_value)
 
     normalized["sources"] = _normalize_sources(normalized.get("sources"), fallback_sources)
+    return normalized
+
+
+
+
+def _ensure_required_blocks(data: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(data)
+    normalized.setdefault("neutral_facts", [])
+    normalized.setdefault("what_we_know", [])
+    normalized.setdefault("what_is_unclear", [])
+    normalized.setdefault("angles", [])
+    normalized.setdefault("sentiment", {
+        "top_emotions": [],
+        "top_questions": [],
+        "shareable_claims": [],
+    })
+    normalized.setdefault("scores", {
+        "bias": {"value": 0.0, "label": "neutral"},
+        "clickbait": 0.0,
+        "evidence": 0.0,
+    })
+
+    scores = normalized.get("scores")
+    if isinstance(scores, dict):
+        scores.setdefault("clickbait", 0.0)
+        scores.setdefault("evidence", 0.0)
+        bias = scores.get("bias")
+        if not isinstance(bias, dict):
+            scores["bias"] = {"value": 0.0, "label": "neutral"}
+        else:
+            bias.setdefault("value", 0.0)
+            bias.setdefault("label", "neutral")
+
     return normalized
 
 
@@ -201,6 +243,7 @@ def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[s
     content = response.choices[0].message.content or ""
     data = _safe_json_loads(content)
     data = _normalize_perspective_payload(data, fallback_sources=list(source_lookup.values()))
+    data = _ensure_required_blocks(data)
     data["cluster_id"] = cluster_id
     data.setdefault("sources", list(source_lookup.values()))
     data["generated_at"] = datetime.now(timezone.utc).isoformat()

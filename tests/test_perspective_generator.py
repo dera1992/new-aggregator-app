@@ -60,3 +60,21 @@ def test_normalize_perspective_payload_repairs_angles_list_and_filters_invalid_f
     assert normalized["angles"][1]["summary"] == "Critics say this is risky"
     assert normalized["scores"]["bias"]["label"] == "right"
     assert normalized["sources"] == [{"name": "Reuters", "url": "https://reuters.example/story"}]
+
+
+def test_normalize_perspective_payload_handles_string_bias_value_and_missing_label():
+    payload = {
+        "angles": {"Supporters": "Some support this move."},
+        "scores": {"bias": {"value": "0.1"}, "clickbait": 0.2, "evidence": 0.7},
+        "sources": [],
+    }
+
+    normalized = _normalize_perspective_payload(
+        payload,
+        fallback_sources=[{"name": "Source", "url": "https://example.com"}],
+    )
+
+    assert isinstance(normalized["angles"], list)
+    assert normalized["angles"][0]["label"] == "Supporters"
+    assert normalized["scores"]["bias"]["value"] == 0.1
+    assert normalized["scores"]["bias"]["label"] == "neutral"
