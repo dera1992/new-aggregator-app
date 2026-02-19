@@ -33,7 +33,7 @@ type ComposeResultsProps = {
 function buildAnalysisCopy(variant: GenerateAnalysisResponse['variants'][number]) {
   const parts = [
     variant.title ? `Title: ${variant.title}` : '',
-    variant.hook ? `Hook: ${variant.hook}` : '',
+    variant.hook ? `Hook: ${typeof variant.hook === 'string' ? variant.hook : '—'}` : '',
     variant.analysis ? `Analysis: ${variant.analysis}` : '',
     variant.key_takeaways.length ? `Key takeaways:\n- ${variant.key_takeaways.join('\n- ')}` : '',
     variant.counterpoints.length ? `Counterpoints:\n- ${variant.counterpoints.join('\n- ')}` : '',
@@ -44,17 +44,85 @@ function buildAnalysisCopy(variant: GenerateAnalysisResponse['variants'][number]
   return parts.join('\n\n');
 }
 
-function buildViralCopy(variant: ViralPostResponse['variants'][number]) {
+function getVariantHashtags(variant: Record<string, unknown>) {
+  return Array.isArray(variant.hashtags) ? (variant.hashtags as string[]) : [];
+}
+
+
+function getVariantThread(variant: Record<string, unknown>) {
+  return Array.isArray(variant.thread)
+    ? variant.thread.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function getViralBody(variant: Record<string, unknown>) {
+  if (typeof variant.body === 'string' && variant.body.trim()) {
+    return variant.body;
+  }
+  if (typeof variant.text === 'string') {
+    return variant.text;
+  }
+  return '';
+}
+
+
+function getViralVariants(result: ComposeResult) {
+  if (result.type !== 'viral') {
+    return [] as Array<Record<string, unknown>>;
+  }
+  const data = result.data as { variants?: unknown[] };
+  return Array.isArray(data.variants)
+    ? data.variants.filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+    : [];
+}
+
+function getCommentVariants(result: ComposeResult) {
+  if (result.type !== 'comment') {
+    return [] as Array<{ tone?: string; comment: string; cta_question?: string }>;
+  }
+
+  const data = result.data as {
+    comments?: unknown[];
+    variants?: unknown[];
+  };
+
+  if (Array.isArray(data.comments)) {
+    return data.comments
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: typeof item.tone === 'string' ? item.tone : 'neutral',
+        comment: typeof item.comment === 'string' ? item.comment : '',
+        cta_question: typeof item.cta_question === 'string' ? item.cta_question : '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  if (Array.isArray(data.variants)) {
+    return data.variants
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+      .map((item) => ({
+        tone: 'neutral',
+        comment: typeof item.text === 'string' ? item.text : '',
+        cta_question: '',
+      }))
+      .filter((item) => item.comment.trim().length > 0);
+  }
+
+  return [];
+}
+
+function buildViralCopy(variant: Record<string, unknown>) {
+  const hashtags = getVariantHashtags(variant);
   const parts = [
-    variant.hook,
-    variant.body,
-    variant.hashtags.length ? variant.hashtags.join(' ') : '',
-    variant.thread?.length ? `Thread:\n${variant.thread.join('\n')}` : '',
+    getViralBody(variant),
+    hashtags.length ? hashtags.join(' ') : '',
+    getVariantThread(variant).length ? `Thread:
+${getVariantThread(variant).join('\n')}` : '',
   ].filter(Boolean);
   return parts.join('\n\n');
 }
 
-function buildCommentCopy(variant: CommentResponse['comments'][number]) {
+function buildCommentCopy(variant: { comment: string; cta_question?: string }) {
   return [variant.comment, variant.cta_question].filter(Boolean).join('\n\n');
 }
 
@@ -188,23 +256,24 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
               ))}
 
             {result.type === 'viral' &&
-              result.data.variants.map((variant, index) => (
-                <div key={`${variant.hook}-${index}`} className="space-y-3 rounded-md border border-border p-4">
+              getViralVariants(result).map((variant, index) => {
+                const hashtags = getVariantHashtags(variant);
+                return (
+                  <div key={`${getViralBody(variant) || 'viral'}-${index}`} className="space-y-3 rounded-md border border-border p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Variant {index + 1}</p>
                     {result.data.best_variant_index === index && <Badge>Best</Badge>}
                   </div>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p><span className="font-medium text-foreground">Hook:</span> {variant.hook}</p>
-                    <p><span className="font-medium text-foreground">Body:</span> {variant.body}</p>
-                    {variant.hashtags.length > 0 && (
-                      <p><span className="font-medium text-foreground">Hashtags:</span> {variant.hashtags.join(' ')}</p>
+                    <p><span className="font-medium text-foreground">Body:</span> {getViralBody(variant) || '—'}</p>
+                    {hashtags.length > 0 && (
+                      <p><span className="font-medium text-foreground">Hashtags:</span> {hashtags.join(' ')}</p>
                     )}
-                    {variant.thread?.length ? (
+                    {getVariantThread(variant).length ? (
                       <div>
                         <p className="font-medium text-foreground">Thread</p>
                         <ol className="list-decimal pl-5">
-                          {variant.thread.map((item) => (
+                          {getVariantThread(variant).map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ol>
@@ -213,11 +282,11 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <CopyButton value={buildViralCopy(variant)} />
-                    {variant.hashtags.length > 0 && (
-                      <CopyButton value={variant.hashtags.join(' ')} />
+                    {hashtags.length > 0 && (
+                      <CopyButton value={hashtags.join(' ')} />
                     )}
-                    {variant.thread?.length ? (
-                      <CopyButton value={variant.thread.join('\n')} />
+                    {getVariantThread(variant).length ? (
+                      <CopyButton value={getVariantThread(variant).join('\n')} />
                     ) : null}
                   </div>
                   <ShareActions
@@ -225,10 +294,11 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                     text={buildViralCopy(variant)}
                   />
                 </div>
-              ))}
+                );
+              })}
 
             {result.type === 'comment' &&
-              result.data.comments.map((comment, index) => (
+              getCommentVariants(result).map((comment, index) => (
                 <div key={`${comment.tone}-${index}`} className="space-y-2 rounded-md border border-border p-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Comment {index + 1}</p>
