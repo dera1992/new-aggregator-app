@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from html import unescape
 from typing import Literal
 from urllib.parse import parse_qs, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from youtube_transcript_api import YouTubeTranscriptApi
 
 
 class URLExtractError(Exception):
@@ -54,53 +54,30 @@ def _extract_html_text(html: str) -> str:
 
 
 def _extract_youtube_text(video_id: str) -> str:
-    list_url = f"https://video.google.com/timedtext?type=list&v={video_id}"
-    list_resp = requests.get(
-        list_url,
-        headers={"User-Agent": USER_AGENT},
-        timeout=(5, 20),
+    try:
+        # 0.6.x+ uses an instance-based API: YouTubeTranscriptApi().fetch(video_id)
+        api = YouTubeTranscriptApi()
+        transcript = api.fetch(video_id, languages=["en", "en-US", "en-GB"])
+        snippets = list(transcript)
+    except Exception as exc:
+        msg = str(exc).lower()
+        if "disabled" in msg:
+            raise URLExtractError("Transcripts are disabled for this YouTube video.")
+        if "unavailable" in msg or "private" in msg:
+            raise URLExtractError("This YouTube video is unavailable.")
+        if "no transcript" in msg or "could not find" in msg or "language" in msg:
+            raise URLExtractError("No English transcript available for this YouTube video.")
+        raise URLExtractError(f"Could not retrieve transcript: {exc}") from exc
+
+    text = _normalize_whitespace(
+        " ".join(
+            s["text"] if isinstance(s, dict) else getattr(s, "text", "")
+            for s in snippets
+        )
     )
-    list_resp.raise_for_status()
-
-    list_soup = BeautifulSoup(list_resp.text, "xml")
-    tracks = list_soup.find_all("track")
-    if not tracks:
-        raise URLExtractError("No captions/transcript available for this YouTube video.")
-
-    selected = None
-    for track in tracks:
-        if (track.get("lang_code") or "").startswith("en"):
-            selected = track
-            break
-    if selected is None:
-        selected = tracks[0]
-
-    lang_code = selected.get("lang_code", "en")
-    name = selected.get("name", "")
-    transcript_url = f"https://video.google.com/timedtext?v={video_id}&lang={lang_code}&fmt=srv3"
-    if name:
-        transcript_url += f"&name={requests.utils.quote(name)}"
-
-    transcript_resp = requests.get(
-        transcript_url,
-        headers={"User-Agent": USER_AGENT},
-        timeout=(5, 20),
-    )
-    transcript_resp.raise_for_status()
-
-    transcript_soup = BeautifulSoup(transcript_resp.text, "xml")
-    segments = []
-    for item in transcript_soup.find_all("text"):
-        if item.text:
-            cleaned = _normalize_whitespace(unescape(item.text))
-            if cleaned:
-                segments.append(cleaned)
-
-    transcript = " ".join(segments)
-    if len(transcript) < 50:
+    if len(text) < 50:
         raise URLExtractError("Could not extract enough transcript text from this YouTube video.")
-
-    return transcript
+    return text
 
 
 def extract_text_from_url(url: str) -> dict[str, str]:

@@ -40,7 +40,7 @@ const defaultFilters: FeedQuery = {
   category: '',
   source: '',
   since: '',
-  limit: 10,
+  limit: 20,
   offset: 0,
 };
 
@@ -209,7 +209,7 @@ export default function FeedPage() {
         <PaginationControls
           limit={data.limit}
           offset={data.offset}
-          total={data.count}
+          total={data.total ?? data.offset + data.count}
           onPageChange={(nextOffset) => updateFilter('offset', nextOffset)}
         />
       </div>

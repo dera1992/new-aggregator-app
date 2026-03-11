@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, jsonify, request, g
 from pydantic import ValidationError
+from sqlalchemy import func
 from models.models import Article, SavedArticle, ReadArticle, UserPreferences, db
 from schemas.comment import CommentRequest
 from schemas.analysis import AnalysisRequest
@@ -60,22 +61,48 @@ def get_clustered_feed():
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
-    query = Article.query.filter(Article.cluster_id.isnot(None))
+    base_filter = [Article.cluster_id.isnot(None)]
     if category:
-        query = query.filter(Article.category == category)
+        base_filter.append(Article.category == category)
     if source:
-        query = query.filter(Article.source_domain == source)
+        base_filter.append(Article.source_domain == source)
     if since:
         try:
             since_dt = datetime.fromisoformat(since)
-            query = query.filter(Article.created_at >= since_dt)
+            base_filter.append(Article.created_at >= since_dt)
         except ValueError:
             return jsonify({"message": "Invalid 'since' format. Use ISO-8601."}), 400
 
-    # 1. Fetch the last processed articles
-    articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()
+    # 1. Total distinct clusters (for pagination)
+    total = (
+        db.session.query(func.count(Article.cluster_id.distinct()))
+        .filter(*base_filter)
+        .scalar() or 0
+    )
 
-    # 2. Grouping logic
+    # 2. Paginate on distinct clusters so limit/offset reflects stories, not articles.
+    cluster_subq = (
+        db.session.query(
+            Article.cluster_id,
+            func.max(Article.created_at).label("latest"),
+        )
+        .filter(*base_filter)
+        .group_by(Article.cluster_id)
+        .order_by(func.max(Article.created_at).desc())
+        .offset(offset)
+        .limit(limit)
+        .subquery()
+    )
+
+    articles = (
+        Article.query
+        .join(cluster_subq, Article.cluster_id == cluster_subq.c.cluster_id)
+        .filter(*base_filter)
+        .order_by(cluster_subq.c.latest.desc(), Article.created_at.desc())
+        .all()
+    )
+
+    # 3. Grouping logic
     stories = {}
     for a in articles:
         cid = a.cluster_id
@@ -85,11 +112,10 @@ def get_clustered_feed():
                 "story_title": a.title,
                 "summary": a.ai_summary,
                 "sources": [],
-                "timestamp": a.created_at.isoformat(),  # Convert for JSON
+                "timestamp": a.created_at.isoformat(),
                 "lead_article_id": a.id,
                 "primary_article_id": a.id,
             }
-
         stories[cid]["sources"].append({
             "article_id": a.id,
             "name": a.source_domain,
@@ -100,6 +126,7 @@ def get_clustered_feed():
     return jsonify({
         "stories": list(stories.values()),
         "count": len(stories),
+        "total": total,
         "offset": offset,
         "limit": limit
     })
@@ -118,23 +145,48 @@ def get_personalized_feed():
     preferred_categories = preferences.preferred_categories if preferences else []
     preferred_sources = preferences.preferred_sources if preferences else []
 
-    query = Article.query.filter(Article.cluster_id.isnot(None))
+    base_filter = [Article.cluster_id.isnot(None)]
     if preferred_categories:
-        query = query.filter(Article.category.in_(preferred_categories))
+        base_filter.append(Article.category.in_(preferred_categories))
     if preferred_sources:
-        query = query.filter(Article.source_domain.in_(preferred_sources))
+        base_filter.append(Article.source_domain.in_(preferred_sources))
     if category:
-        query = query.filter(Article.category == category)
+        base_filter.append(Article.category == category)
     if source:
-        query = query.filter(Article.source_domain == source)
+        base_filter.append(Article.source_domain == source)
     if since:
         try:
             since_dt = datetime.fromisoformat(since)
-            query = query.filter(Article.created_at >= since_dt)
+            base_filter.append(Article.created_at >= since_dt)
         except ValueError:
             return jsonify({"message": "Invalid 'since' format. Use ISO-8601."}), 400
 
-    articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()
+    total = (
+        db.session.query(func.count(Article.cluster_id.distinct()))
+        .filter(*base_filter)
+        .scalar() or 0
+    )
+
+    cluster_subq = (
+        db.session.query(
+            Article.cluster_id,
+            func.max(Article.created_at).label("latest"),
+        )
+        .filter(*base_filter)
+        .group_by(Article.cluster_id)
+        .order_by(func.max(Article.created_at).desc())
+        .offset(offset)
+        .limit(limit)
+        .subquery()
+    )
+
+    articles = (
+        Article.query
+        .join(cluster_subq, Article.cluster_id == cluster_subq.c.cluster_id)
+        .filter(*base_filter)
+        .order_by(cluster_subq.c.latest.desc(), Article.created_at.desc())
+        .all()
+    )
 
     stories = {}
     for a in articles:
@@ -159,6 +211,7 @@ def get_personalized_feed():
     return jsonify({
         "stories": list(stories.values()),
         "count": len(stories),
+        "total": total,
         "offset": offset,
         "limit": limit,
         "preferences": {

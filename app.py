@@ -1,12 +1,14 @@
 import os
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from extensions import limiter
 from models.models import db
 from routes.news import news_bp
 from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.profile import profile_bp
 from routes.preferences import preferences_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -32,6 +34,37 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your_jwt_secret_key")
     app.config["FRONTEND_URL"] = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+    # Use Redis for rate-limit storage when available, fall back to memory
+    redis_url = os.getenv("REDIS_URL")
+    if redis_url:
+        app.config["RATELIMIT_STORAGE_URI"] = redis_url
+    limiter.init_app(app)
+
+    # CSRF protection: reject state-changing requests whose Origin/Referer
+    # doesn't match an allowed origin. JWT-in-Authorization-header already
+    # prevents classic CSRF, but this adds defense-in-depth for any future
+    # cookie-based flows.
+    allowed_origins = (
+        [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+        if cors_origins_env and cors_origins_env.strip() != "*"
+        else []
+    )
+
+    @app.before_request
+    def csrf_protect():
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return
+        # Requests with a valid Bearer token are already unforgeable from
+        # cross-origin pages, so only check unauthenticated mutation endpoints.
+        if request.headers.get("Authorization", "").startswith("Bearer "):
+            return
+        if not allowed_origins:
+            # CORS_ORIGINS not configured — skip enforcement in dev.
+            return
+        origin = request.headers.get("Origin") or request.headers.get("Referer", "")
+        if not any(origin.startswith(o) for o in allowed_origins):
+            return jsonify({"message": "CSRF check failed: origin not allowed."}), 403
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)

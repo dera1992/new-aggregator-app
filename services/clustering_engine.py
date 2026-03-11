@@ -2,6 +2,7 @@ from models.models import db, Article
 from sentence_transformers import SentenceTransformer
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics.pairwise import cosine_similarity
+from sqlalchemy import or_
 import numpy as np
 from datetime import datetime, timedelta
 
@@ -9,15 +10,19 @@ from datetime import datetime, timedelta
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 
-def cluster_recent_articles(window_hours=24):
+def cluster_recent_articles(window_hours=72):
     """
-    Groups articles from the last X hours into stories.
+    Groups articles into stories.
+    Includes articles from the last `window_hours` hours PLUS any
+    previously summarized articles that have never been clustered yet.
     """
-    # 1. Fetch articles from the last 24 hours that have been summarized
     time_threshold = datetime.utcnow() - timedelta(hours=window_hours)
     articles = Article.query.filter(
-        Article.created_at >= time_threshold,
-        Article.ai_summary != None
+        Article.ai_summary != None,
+        or_(
+            Article.created_at >= time_threshold,  # recent articles
+            Article.cluster_id == None,            # older articles never clustered
+        )
     ).all()
 
     if len(articles) < 2:
@@ -40,11 +45,19 @@ def cluster_recent_articles(window_hours=24):
     # Predict clusters
     labels = clustering_model.fit_predict(1 - similarity_matrix)
 
-    # 4. Update the Database
-    # We use the current timestamp to make cluster IDs unique across different windows
-    base_id = int(datetime.utcnow().timestamp())
+    # 4. Update the Database with stable cluster IDs.
+    # Group articles by their assigned label first.
+    cluster_to_articles: dict[int, list] = {}
     for i, article in enumerate(articles):
-        article.cluster_id = base_id + int(labels[i])
+        cluster_to_articles.setdefault(int(labels[i]), []).append(article)
+
+    for cluster_articles in cluster_to_articles.values():
+        # Use the smallest article.id in the cluster as the stable cluster_id.
+        # Article IDs are auto-incremented so new articles never lower the min,
+        # keeping the ID consistent across re-clustering runs.
+        stable_id = min(a.id for a in cluster_articles)
+        for article in cluster_articles:
+            article.cluster_id = stable_id
 
     db.session.commit()
     print(f" Successfully grouped {len(articles)} articles into {len(set(labels))} stories.")

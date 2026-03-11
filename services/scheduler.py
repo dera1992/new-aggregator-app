@@ -1,5 +1,6 @@
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_MISSED
 from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
 
 from services.clustering_engine import cluster_recent_articles
 from services.scraper import run_harvester
@@ -52,16 +53,17 @@ def start_background_jobs(app):
 
     scheduler.add_listener(handle_job_event, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR | EVENT_JOB_MISSED)
 
-    # Step 1: Scrape Raw Data (Every 20m)
+    # Step 1: Scrape Raw Data (Every 20m, run immediately on startup)
     scheduler.add_job(
         id="scrape_raw_data",
         name="Scrape raw data",
         func=lambda: run_with_context(run_harvester, "scrape_raw_data", "locks:scraper", 15 * 60),
         trigger="interval",
         minutes=20,
+        next_run_time=datetime.now(),
     )
 
-    # Step 2: Generate AI Summaries (Every 22m)
+    # Step 2: Generate AI Summaries (Every 22m, run 2m after startup to let scrape finish)
     scheduler.add_job(
         id="generate_ai_summaries",
         name="Generate AI summaries",
@@ -73,9 +75,10 @@ def start_background_jobs(app):
         ),
         trigger="interval",
         minutes=22,
+        next_run_time=datetime.now(),
     )
 
-    # Step 3: Group into Clusters (Every 25m)
+    # Step 3: Group into Clusters (Every 25m, run immediately on startup)
     scheduler.add_job(
         id="cluster_recent_articles",
         name="Cluster recent articles",
@@ -87,6 +90,7 @@ def start_background_jobs(app):
         ),
         trigger="interval",
         minutes=25,
+        next_run_time=datetime.now(),
     )
 
     # Step 4: Send daily digests (Every 15m)
@@ -101,6 +105,7 @@ def start_background_jobs(app):
         ),
         trigger="interval",
         minutes=15,
+        next_run_time=datetime.now(),
     )
 
     scheduler.start()

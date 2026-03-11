@@ -52,7 +52,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       }
     }
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       clearToken();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';

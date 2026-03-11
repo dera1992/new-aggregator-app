@@ -13,6 +13,7 @@ from utils.auth import (
     token_expiry,
 )
 from utils.decorators import token_required
+from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -42,6 +43,7 @@ def build_confirmation_link(email: str, token: str) -> str:
 
 
 @auth_bp.route('/api/auth/register', methods=['POST'])
+@limiter.limit("5 per hour")
 def register():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -88,6 +90,7 @@ def register():
 
 
 @auth_bp.route('/api/auth/confirm', methods=['POST'])
+@limiter.limit("10 per hour")
 def confirm_email():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -119,6 +122,7 @@ def confirm_email():
 
 
 @auth_bp.route('/api/auth/login', methods=['POST'])
+@limiter.limit("10 per minute")
 def login():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -149,6 +153,7 @@ def login():
 
 
 @auth_bp.route('/api/auth/resend-confirmation', methods=['POST'])
+@limiter.limit("3 per hour")
 def resend_confirmation():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -181,6 +186,7 @@ def resend_confirmation():
 
 
 @auth_bp.route('/api/auth/forgot-password', methods=['POST'])
+@limiter.limit("3 per hour")
 def forgot_password():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -207,6 +213,7 @@ def forgot_password():
 
 
 @auth_bp.route('/api/auth/reset-password', methods=['POST'])
+@limiter.limit("5 per hour")
 def reset_password():
     data = get_json_payload()
     email = normalize_email(data.get('email'))
@@ -241,6 +248,7 @@ def reset_password():
 
 
 @auth_bp.route('/api/auth/change-password', methods=['POST'])
+@limiter.limit("5 per hour")
 @token_required
 def change_password():
     data = get_json_payload()

@@ -14,10 +14,10 @@ type PricingPlan = {
 };
 
 const navLinks = [
-  { href: '/#home', label: 'Home' },
+  { href: '/', label: 'Home' },
   { href: '/#features', label: 'Features' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/#about', label: 'About' },
+  { href: '/about', label: 'About' },
 ];
 
 const plans: PricingPlan[] = [

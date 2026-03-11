@@ -18,6 +18,7 @@ export type Story = {
 export type FeedResponse = {
   stories: Story[];
   count: number;
+  total: number;
   offset: number;
   limit: number;
 };

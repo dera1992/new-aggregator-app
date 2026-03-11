@@ -122,6 +122,7 @@ export default function ComposePage() {
       }),
     onSuccess: (data) => {
       setText(data.text);
+      setArticleUrl('');
       toast.success(
         data.source_type === 'youtube'
           ? 'Imported YouTube transcript into editor.'
