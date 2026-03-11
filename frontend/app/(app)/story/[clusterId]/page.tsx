@@ -476,11 +476,11 @@ export default function StoryPage() {
                   <CardHeader>
                     <CardTitle>Angles</CardTitle>
                   </CardHeader>
-                  <CardContent className="flex gap-3 overflow-x-auto pb-2">
+                  <CardContent className="flex flex-col gap-3 sm:flex-row sm:overflow-x-auto sm:pb-2">
                     {perspectiveQuery.data.angles.map((angle) => (
                       <Card
                         key={angle.label}
-                        className="min-w-[260px] max-w-[320px]"
+                        className="w-full sm:min-w-[260px] sm:max-w-[320px]"
                       >
                         <CardHeader>
                           <CardTitle className="text-base">

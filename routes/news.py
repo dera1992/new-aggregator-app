@@ -18,6 +18,7 @@ from services.summary_generator import generate_summary, SummaryGenError
 from services.ai_router import PROMPT_VERSIONS, run_task
 from services.url_text_extractor import extract_text_from_url, URLExtractError
 from utils.decorators import token_required
+from utils.credits import check_and_deduct_credits
 
 # Define the Blueprint
 news_bp = Blueprint('news', __name__)
@@ -328,6 +329,11 @@ def generate_perspective_endpoint():
         status = 404 if message == "Story not found." else 502
         return jsonify({"message": message}), status
 
+    cache_hit = routed.get("cache_hit", False)
+    credit_err = check_and_deduct_credits(g.current_user, "perspective", cache_hit)
+    if credit_err:
+        return credit_err
+
     response = {k: v for k, v in routed.items() if k != "cache_hit"}
     return jsonify(response)
 
@@ -493,6 +499,11 @@ def generate_viral_post_endpoint():
     except ViralPostError as exc:
         return jsonify({"message": str(exc)}), 502
 
+    cache_hit = routed.get("cache_hit", False)
+    credit_err = check_and_deduct_credits(g.current_user, "viral_post", cache_hit)
+    if credit_err:
+        return credit_err
+
     response = {k: v for k, v in routed.items() if k != "cache_hit"}
     return jsonify(response)
 
@@ -553,6 +564,11 @@ def generate_comment_endpoint():
         )
     except CommentGenError as exc:
         return jsonify({"message": str(exc)}), 502
+
+    cache_hit = routed.get("cache_hit", False)
+    credit_err = check_and_deduct_credits(g.current_user, "comment", cache_hit)
+    if credit_err:
+        return credit_err
 
     response = {k: v for k, v in routed.items() if k != "cache_hit"}
     return jsonify(response)
@@ -618,6 +634,11 @@ def generate_joke_endpoint():
     except JokeGenError as exc:
         return jsonify({"message": str(exc)}), 502
 
+    cache_hit = routed.get("cache_hit", False)
+    credit_err = check_and_deduct_credits(g.current_user, "joke", cache_hit)
+    if credit_err:
+        return credit_err
+
     response = {k: v for k, v in routed.items() if k != "cache_hit"}
     return jsonify(response)
 
@@ -679,6 +700,11 @@ def generate_analysis_endpoint():
         )
     except AnalysisGenError as exc:
         return jsonify({"message": str(exc)}), 502
+
+    cache_hit = routed.get("cache_hit", False)
+    credit_err = check_and_deduct_credits(g.current_user, "analysis", cache_hit)
+    if credit_err:
+        return credit_err
 
     response = {k: v for k, v in routed.items() if k != "cache_hit"}
     return jsonify(response)

@@ -10,7 +10,9 @@ db = SQLAlchemy()
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=True)
+    oauth_provider = db.Column(db.String(50), nullable=True)
+    oauth_provider_id = db.Column(db.String(200), nullable=True)
     role = db.Column(db.String(50), default="user", nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     is_email_confirmed = db.Column(db.Boolean, default=False)
@@ -20,13 +22,24 @@ class User(db.Model):
     reset_token_hash = db.Column(db.String(64), index=True)
     reset_token_expires_at = db.Column(db.DateTime)
     password_changed_at = db.Column(db.DateTime)
+    ai_credits_balance = db.Column(db.Integer, default=10, nullable=False)
+    ai_credits_reset_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.utcnow() + timedelta(days=30),
+        nullable=True,
+    )
 
     def set_password(self, password):
         self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self.password_changed_at = datetime.utcnow()
 
     def check_password(self, password):
-        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+        if not self.password_hash:
+            return False
+        try:
+            return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+        except ValueError:
+            return False
 
 
 class UserProfile(db.Model):
@@ -128,3 +141,13 @@ class AIOutputCache(db.Model):
             name="uniq_ai_output_cache_key",
         ),
     )
+
+
+class AIUsageLog(db.Model):
+    """Audit log of every AI generation attempt."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    task_type = db.Column(db.String(64), nullable=False, index=True)
+    cache_hit = db.Column(db.Boolean, default=False, nullable=False)
+    credits_used = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

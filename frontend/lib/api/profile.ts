@@ -1,4 +1,5 @@
-import { apiFetch } from '@/lib/api/client';
+import { apiFetch, ApiError } from '@/lib/api/client';
+import { getToken } from '@/lib/auth/token';
 
 export type ProfileResponse = {
   email: string;
@@ -25,4 +26,26 @@ export function updateProfile(payload: ProfileUpdatePayload) {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+}
+
+export async function uploadAvatar(file: File): Promise<{ avatar_url: string }> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/profile/avatar`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    },
+  );
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(
+      (data as { message?: string }).message ?? response.statusText,
+      response.status,
+    );
+  }
+  return response.json();
 }

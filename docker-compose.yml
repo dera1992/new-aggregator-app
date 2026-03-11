@@ -13,6 +13,15 @@ services:
       RUN_DB_INIT: "true"
       RUN_BACKGROUND_JOBS: "false"   # IMPORTANT: app should not run jobs
       REDIS_URL: redis://redis:6379/0
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      FACEBOOK_APP_ID: ""
+      FACEBOOK_APP_SECRET: ""
+      X_CLIENT_ID: ""
+      X_CLIENT_SECRET: ""
+    command: ["/entrypoint.sh", "gunicorn", "-b", "0.0.0.0:8080", "--access-logfile", "-", "app:app"]
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
       - db
       - redis
@@ -60,3 +69,4 @@ services:
 
 volumes:
   db-data:
+  uploads-data:

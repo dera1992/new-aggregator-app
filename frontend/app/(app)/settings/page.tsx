@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { Camera, Loader2 } from 'lucide-react';
 
 import { changePassword } from '@/lib/api/auth';
-import { fetchProfile, updateProfile } from '@/lib/api/profile';
+import { fetchProfile, updateProfile, uploadAvatar } from '@/lib/api/profile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,22 +32,21 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 type ProfileFormValues = {
   full_name: string;
   timezone: string;
-  avatar_url: string;
 };
 
 export default function SettingsPage() {
   const { resolvedTheme, resetTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { currentPassword: '', newPassword: '' },
   });
 
   const profileForm = useForm<ProfileFormValues>({
-    defaultValues: {
-      full_name: '',
-      timezone: '',
-      avatar_url: '',
-    },
+    defaultValues: { full_name: '', timezone: '' },
   });
 
   const [defaults, setDefaults] = useState<GeneratorDefaults>(loadGeneratorDefaults());
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     setDefaults(loadGeneratorDefaults());
   }, []);
 
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: fetchProfile,
   });
@@ -65,10 +65,34 @@ export default function SettingsPage() {
       profileForm.reset({
         full_name: profile.full_name ?? '',
         timezone: profile.timezone ?? '',
-        avatar_url: profile.avatar_url ?? '',
       });
+      if (profile.avatar_url) {
+        setAvatarPreview(profile.avatar_url);
+      }
     }
   }, [profile, profileForm]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show local preview immediately
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreview(objectUrl);
+
+    setIsUploadingAvatar(true);
+    try {
+      await uploadAvatar(file);
+      toast.success('Avatar updated');
+      refetchProfile();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed');
+      setAvatarPreview(profile?.avatar_url ?? null);
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const passwordMutation = useMutation({
     mutationFn: (values: PasswordFormValues) =>
@@ -85,11 +109,8 @@ export default function SettingsPage() {
       updateProfile({
         full_name: values.full_name || undefined,
         timezone: values.timezone || undefined,
-        avatar_url: values.avatar_url || undefined,
       }),
-    onSuccess: () => {
-      toast.success('Profile updated');
-    },
+    onSuccess: () => toast.success('Profile updated'),
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -112,6 +133,53 @@ export default function SettingsPage() {
               onSubmit={profileForm.handleSubmit((values) => profileMutation.mutate(values))}
               className="space-y-4"
             >
+              {/* Avatar upload */}
+              <div className="space-y-2">
+                <Label>Avatar</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative h-20 w-20 shrink-0">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar"
+                        className="h-20 w-20 rounded-full object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted border border-border text-muted-foreground text-2xl font-semibold">
+                        {profile?.full_name?.charAt(0)?.toUpperCase() ?? '?'}
+                      </div>
+                    )}
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                        <Loader2 className="h-5 w-5 animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      {isUploadingAvatar ? 'Uploading...' : 'Change photo'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG, WebP or GIF · max 2 MB
+                    </p>
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full name</Label>
                 <Input id="full_name" {...profileForm.register('full_name')} />
@@ -119,10 +187,6 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
                 <Input id="timezone" {...profileForm.register('timezone')} placeholder="UTC" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="avatar_url">Avatar URL</Label>
-                <Input id="avatar_url" {...profileForm.register('avatar_url')} />
               </div>
               <Button type="submit" disabled={profileMutation.isPending}>
                 {profileMutation.isPending ? 'Saving...' : 'Save profile'}
@@ -248,23 +312,44 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Default brand voice</Label>
-              <Input
+              <Select
                 value={defaults.brandVoice}
-                onChange={(event) =>
-                  setDefaults((prev) => ({ ...prev, brandVoice: event.target.value }))
+                onValueChange={(value) =>
+                  setDefaults((prev) => ({ ...prev, brandVoice: value }))
                 }
-                placeholder="Brand voice cues"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Brand voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clear and confident">Clear and confident</SelectItem>
+                  <SelectItem value="bold and direct">Bold and direct</SelectItem>
+                  <SelectItem value="professional and credible">Professional and credible</SelectItem>
+                  <SelectItem value="friendly and conversational">Friendly and conversational</SelectItem>
+                  <SelectItem value="witty and playful">Witty and playful</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Default audience</Label>
-              <Input
+              <Select
                 value={defaults.audience}
-                onChange={(event) =>
-                  setDefaults((prev) => ({ ...prev, audience: event.target.value }))
+                onValueChange={(value) =>
+                  setDefaults((prev) => ({ ...prev, audience: value }))
                 }
-                placeholder="Audience segment"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="General audience">General audience</SelectItem>
+                  <SelectItem value="Founders">Founders</SelectItem>
+                  <SelectItem value="Marketers">Marketers</SelectItem>
+                  <SelectItem value="Developers">Developers</SelectItem>
+                  <SelectItem value="Executives">Executives</SelectItem>
+                  <SelectItem value="Investors">Investors</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -289,13 +374,24 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Default comment audience</Label>
-              <Input
+              <Select
                 value={defaults.commentAudience}
-                onChange={(event) =>
-                  setDefaults((prev) => ({ ...prev, commentAudience: event.target.value }))
+                onValueChange={(value) =>
+                  setDefaults((prev) => ({ ...prev, commentAudience: value }))
                 }
-                placeholder="Comment audience"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Comment audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="General audience">General audience</SelectItem>
+                  <SelectItem value="Founders">Founders</SelectItem>
+                  <SelectItem value="Creators">Creators</SelectItem>
+                  <SelectItem value="Developers">Developers</SelectItem>
+                  <SelectItem value="Investors">Investors</SelectItem>
+                  <SelectItem value="Customers">Customers</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <Button onClick={handleDefaultsSave}>Save defaults</Button>

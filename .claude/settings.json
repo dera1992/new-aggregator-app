@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker compose:*)",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"rockflint20@gmail.com\"\",\"\"password\"\":\"\"test\"\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d '{\"\"email\"\":\"\"rockflint20@gmail.com\"\",\"\"password\"\":\"\"wrongpass\"\"}')",
+      "Bash(docker compose exec db psql -U user -d news_db -c \":*)",
+      "Bash(docker compose exec app python3 -c \":*)",
+      "Bash(grep -v \"Traceback\\\\|File \"\"/usr/local\\\\|^\\\\-\\\\-$\\\\|full_dispatch\\\\|handle_user\\\\|wrapped_function\\\\|make_response\\\\|dispatch_request\\\\|ensure_sync\\\\|wsgi_app\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(tasklist)",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d \"{\"\"email\"\":\"\"ezechdr16@gmail.com\"\",\"\"password\"\":\"\"testpass\"\"}\")",
+      "Bash(grep -n \"audienceOptions\\\\|brandVoiceOptions\\\\|commentAudienceOptions\\\\|\\\\[\\\\]$\\\\|= \\\\[\" c:/projects/news-aggregator-app/frontend/components/compose/ComposeEditor.tsx)",
+      "Bash(npx shadcn@latest add dropdown-menu --yes)",
+      "Bash(npx shadcn@latest add dropdown-menu)"
+    ]
+  }
+}

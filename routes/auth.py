@@ -42,6 +42,12 @@ def build_confirmation_link(email: str, token: str) -> str:
     return f"{base_url}/confirm?{query}"
 
 
+def build_reset_link(email: str, token: str) -> str:
+    base_url = current_app.config.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    query = urlencode({"email": email, "token": token})
+    return f"{base_url}/reset-password?{query}"
+
+
 @auth_bp.route('/api/auth/register', methods=['POST'])
 @limiter.limit("5 per hour")
 def register():
@@ -204,10 +210,16 @@ def forgot_password():
     user.reset_token_expires_at = token_expiry(hours=2)
     db.session.commit()
 
+    reset_link = build_reset_link(email, reset_token)
     send_email(
         to_email=email,
         subject="Reset your password",
-        body=f"Use this token to reset your password: {reset_token}",
+        body=(
+            "You requested a password reset for your News Aggregator account.\n\n"
+            "Click the link below to set a new password:\n"
+            f"{reset_link}\n\n"
+            "This link expires in 2 hours. If you did not request this, you can ignore this email."
+        ),
     )
     return jsonify({"message": "If that account exists, a reset email has been sent."}), 200
 

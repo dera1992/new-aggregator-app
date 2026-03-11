@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
   PenSquare,
   Shield,
+  ChevronDown,
+  User,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +24,13 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -118,6 +127,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           </SheetClose>
                         );
                       })}
+                      <div className="mt-2 border-t border-border pt-2">
+                        <SheetClose asChild>
+                          <button
+                            onClick={handleLogout}
+                            className={cn(
+                              'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent text-destructive',
+                            )}
+                          >
+                            <LogOut className="h-4 w-4" />
+                            Logout
+                          </button>
+                        </SheetClose>
+                      </div>
                     </nav>
                   </SheetContent>
                 </Sheet>
@@ -139,16 +161,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <Button
-                  asChild
-                  className="bg-[#FF6600] text-white hover:bg-[#ff7a1a]"
-                >
-                  <Link href="/compose">Get Started</Link>
-                </Button>
-                <Button variant="outline" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <User className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-1">Account</span>
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </header>

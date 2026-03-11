@@ -161,8 +161,73 @@ export function MarketingPageTemplate({
 
       <main className="pt-24">{children}</main>
 
-      <footer className="border-t border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-        © 2026 News Aggregator. All rights reserved.
+      <footer className="border-t border-slate-100 bg-[#0d1424] px-4 py-12 dark:border-slate-800">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="font-heading text-base font-semibold text-white">
+                News Aggregator
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                Real-time news intelligence for creators, journalists, and
+                analysts.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white">
+                Platform
+              </p>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400 leading-relaxed">
+                <li>
+                  <Link href="/feed" className="text-slate-400 transition-colors hover:text-white">News Feed</Link>
+                </li>
+                <li>
+                  <Link href="/compose" className="text-slate-400 transition-colors hover:text-white">Compose</Link>
+                </li>
+                <li>
+                  <Link href="/preferences" className="text-slate-400 transition-colors hover:text-white">Preferences</Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white">
+                Quick Links
+              </p>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400 leading-relaxed">
+                <li>
+                  <Link href="/about" className="text-slate-400 transition-colors hover:text-white">About</Link>
+                </li>
+                <li>
+                  <Link href="/pricing" className="text-slate-400 transition-colors hover:text-white">Pricing</Link>
+                </li>
+
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-white">
+                Legal
+              </p>
+              <ul className="mt-4 space-y-3 text-sm text-slate-400 leading-relaxed">
+                <li>
+                  <Link href="/privacy" className="text-slate-400 transition-colors hover:text-white">Privacy Policy</Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-slate-400 transition-colors hover:text-white">Terms of Service</Link>
+                </li>
+                <li>
+                  <Link href="/cookies" className="text-slate-400 transition-colors hover:text-white">Cookie Policy</Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 border-t border-slate-800 pt-6 text-center text-xs text-slate-600">
+            © 2026 News Aggregator. All rights reserved.
+          </div>
+        </div>
       </footer>
     </div>
   );
