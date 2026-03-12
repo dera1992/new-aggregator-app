@@ -38,3 +38,6 @@ redis==5.0.1
 
 # App Server
 gunicorn==21.2.0
+
+# Payments
+stripe>=8.0.0

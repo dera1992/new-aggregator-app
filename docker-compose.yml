@@ -19,6 +19,10 @@ services:
       FACEBOOK_APP_SECRET: ""
       X_CLIENT_ID: ""
       X_CLIENT_SECRET: ""
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
+      STRIPE_PRO_PRICE_ID: "${STRIPE_PRO_PRICE_ID}"
+      STRIPE_BUSINESS_PRICE_ID: "${STRIPE_BUSINESS_PRICE_ID}"
     command: ["/entrypoint.sh", "gunicorn", "-b", "0.0.0.0:8080", "--access-logfile", "-", "app:app"]
     volumes:
       - uploads-data:/app/uploads

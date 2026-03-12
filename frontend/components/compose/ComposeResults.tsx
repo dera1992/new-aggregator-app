@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CopyButton } from '@/components/copy-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShareActions } from '@/components/share-actions';
-import type { CommentResponse, GenerateAnalysisResponse, GenerateJokeResponse, ViralPostResponse } from '@/types/news';
+import type { CommentResponse, GenerateAnalysisResponse, GenerateJokeResponse, PerspectiveResponse, ViralPostResponse } from '@/types/news';
 import type { GenerateSummaryResponse } from '@/types/compose';
 
 export type ComposeResult =
@@ -14,7 +14,8 @@ export type ComposeResult =
   | { type: 'analysis'; data: GenerateAnalysisResponse }
   | { type: 'joke'; data: GenerateJokeResponse }
   | { type: 'viral'; data: ViralPostResponse }
-  | { type: 'comment'; data: CommentResponse };
+  | { type: 'comment'; data: CommentResponse }
+  | { type: 'perspective'; data: PerspectiveResponse };
 
 export type ComposeDraft = {
   id: string;
@@ -138,7 +139,7 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
   const warnings = extractWarnings(result);
 
   return (
-    <Card className="h-full">
+    <Card className="w-full min-w-0 overflow-hidden lg:h-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Results</CardTitle>
         {result ? (
@@ -315,6 +316,69 @@ export function ComposeResults({ result, isLoading, drafts, onSaveDraft }: Compo
                   />
                 </div>
               ))}
+
+            {result.type === 'perspective' && (
+              <div className="space-y-4">
+                {result.data.neutral_facts.length > 0 && (
+                  <div className="rounded-md border border-border p-4 space-y-2">
+                    <p className="text-sm font-medium">Neutral Facts</p>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                      {result.data.neutral_facts.map((fact) => <li key={fact}>{fact}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {result.data.what_we_know.length > 0 && (
+                  <div className="rounded-md border border-border p-4 space-y-2">
+                    <p className="text-sm font-medium">What We Know</p>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                      {result.data.what_we_know.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {result.data.what_is_unclear.length > 0 && (
+                  <div className="rounded-md border border-border p-4 space-y-2">
+                    <p className="text-sm font-medium">What Is Unclear</p>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                      {result.data.what_is_unclear.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {result.data.angles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Angles</p>
+                    {result.data.angles.map((angle) => (
+                      <div key={angle.label} className="rounded-md border border-border p-4 space-y-1">
+                        <p className="text-sm font-medium">{angle.label}</p>
+                        <p className="text-sm text-muted-foreground">{angle.summary}</p>
+                        {angle.key_points.length > 0 && (
+                          <ul className="list-disc pl-5 text-xs text-muted-foreground">
+                            {angle.key_points.map((pt) => <li key={pt}>{pt}</li>)}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="rounded-md border border-border p-4 space-y-2">
+                  <p className="text-sm font-medium">Scores</p>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <span>Bias: <Badge variant="outline">{result.data.scores.bias.label}</Badge></span>
+                    <span>Clickbait: {(result.data.scores.clickbait * 100).toFixed(0)}%</span>
+                    <span>Evidence: {(result.data.scores.evidence * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+                {result.data.sentiment.top_emotions.length > 0 && (
+                  <div className="rounded-md border border-border p-4 space-y-2">
+                    <p className="text-sm font-medium">Top Emotions</p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.data.sentiment.top_emotions.map((e) => (
+                        <Badge key={e.emotion} variant="secondary">{e.emotion} ({(e.score * 100).toFixed(0)}%)</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

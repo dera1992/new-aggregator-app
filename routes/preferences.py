@@ -64,7 +64,7 @@ def update_preferences():
         preferences.preferred_categories = categories
     if sources is not None:
         preferences.preferred_sources = sources
-    if digest_time is not None:
+    if "digest_time" in data:
         preferences.digest_time = digest_time
     if digest_enabled is not None:
         preferences.digest_enabled = digest_enabled

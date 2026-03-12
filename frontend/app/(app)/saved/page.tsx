@@ -1,18 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { fetchSavedArticles } from '@/lib/api/news';
+import { fetchSavedArticles, unsaveArticle } from '@/lib/api/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/loading-state';
 import { ErrorState } from '@/components/error-state';
 import { EmptyState } from '@/components/empty-state';
 
 export default function SavedPage() {
+  const queryClient = useQueryClient();
   const savedQuery = useQuery({
     queryKey: ['saved'],
     queryFn: fetchSavedArticles,
+  });
+
+  const unsaveMutation = useMutation({
+    mutationFn: unsaveArticle,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['saved'] });
+      toast.success('Article removed from saved.');
+    },
+    onError: () => toast.error('Failed to remove article.'),
   });
 
   return (
@@ -46,14 +59,25 @@ export default function SavedPage() {
                       {article.source} · {new Date(article.timestamp).toLocaleString()}
                     </p>
                   </div>
-                  {article.cluster_id && (
-                    <Link
-                      href={`/story/${article.cluster_id}`}
-                      className="text-sm text-primary hover:underline"
+                  <div className="flex items-center gap-2">
+                    {article.cluster_id && (
+                      <Link
+                        href={`/story/${article.cluster_id}`}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View story
+                      </Link>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      disabled={unsaveMutation.isPending}
+                      onClick={() => unsaveMutation.mutate(article.article_id!)}
                     >
-                      View story
-                    </Link>
-                  )}
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

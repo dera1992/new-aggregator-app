@@ -57,6 +57,12 @@ export type GenerateCommentFromTextRequest = {
 export type ComposeJokePlatform = JokePlatform;
 export type ComposeJokeStyle = JokeStyle;
 
+export type GeneratePerspectiveFromTextRequest = {
+  text: string;
+  tone: 'neutral' | 'genz' | 'professional';
+  slang_level: 'none' | 'light' | 'heavy';
+};
+
 export type ExtractUrlTextRequest = {
   url: string;
 };

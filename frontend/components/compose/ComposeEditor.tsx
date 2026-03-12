@@ -24,7 +24,8 @@ export type ComposeAction =
   | 'analysis'
   | 'joke'
   | 'viral'
-  | 'comment';
+  | 'comment'
+  | 'perspective';
 
 export type SummaryOptions = {
   style: 'short' | 'standard' | 'detailed';
@@ -67,12 +68,18 @@ export type CommentOptions = {
   factMode: boolean;
 };
 
+export type PerspectiveOptions = {
+  tone: 'neutral' | 'genz' | 'professional';
+  slangLevel: 'none' | 'light' | 'heavy';
+};
+
 export type ComposeOptions = {
   summary: SummaryOptions;
   analysis: AnalysisOptions;
   joke: JokeOptions;
   viral: ViralOptions;
   comment: CommentOptions;
+  perspective: PerspectiveOptions;
 };
 
 const jokeAudienceOptions = [
@@ -167,11 +174,11 @@ export function ComposeEditor({
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
   return (
-    <Card className="h-full">
+    <Card className="w-full min-w-0 overflow-hidden lg:h-full">
       <CardHeader>
         <CardTitle>Paste Article</CardTitle>
       </CardHeader>
-      <CardContent className="flex h-full flex-col gap-6">
+      <CardContent className="flex flex-col gap-6 lg:h-full">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="article-text">Article text</Label>
@@ -184,7 +191,7 @@ export function ComposeEditor({
             value={text}
             onChange={(event) => onTextChange(event.target.value)}
             placeholder="Paste the full article or news content here..."
-            className="min-h-[260px] resize-none"
+            className="min-h-[160px] sm:min-h-[220px] lg:min-h-[260px] resize-none"
           />
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={onPaste}>
@@ -208,7 +215,7 @@ export function ComposeEditor({
               id="article-url"
               value={articleUrl}
               onChange={(event) => onArticleUrlChange(event.target.value)}
-              placeholder="https://example.com/article or https://www.youtube.com/watch?v=..."
+              placeholder="Article URL or YouTube link..."
             />
             <Button
               type="button"
@@ -233,13 +240,16 @@ export function ComposeEditor({
               onValueChange={(value) => onActionChange(value as ComposeAction)}
               className="mt-2"
             >
-              <TabsList className="flex flex-wrap">
-                <TabsTrigger value="summary">Summarize</TabsTrigger>
-                <TabsTrigger value="analysis">Analyze</TabsTrigger>
-                <TabsTrigger value="joke">Joke</TabsTrigger>
-                <TabsTrigger value="viral">Viral Post</TabsTrigger>
-                <TabsTrigger value="comment">Comment</TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto pb-1">
+                <TabsList className="flex w-max">
+                  <TabsTrigger value="summary">Summarize</TabsTrigger>
+                  <TabsTrigger value="analysis">Analyze</TabsTrigger>
+                  <TabsTrigger value="joke">Joke</TabsTrigger>
+                  <TabsTrigger value="viral">Viral Post</TabsTrigger>
+                  <TabsTrigger value="comment">Comment</TabsTrigger>
+                  <TabsTrigger value="perspective">Perspective</TabsTrigger>
+                </TabsList>
+              </div>
             </Tabs>
           </div>
 
@@ -832,6 +842,58 @@ export function ComposeEditor({
                     }))
                   }
                 />
+              </div>
+            </div>
+          )}
+          {action === 'perspective' && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Tone</Label>
+                <Select
+                  value={options.perspective.tone}
+                  onValueChange={(value) =>
+                    setOptions((prev) => ({
+                      ...prev,
+                      perspective: {
+                        ...prev.perspective,
+                        tone: value as PerspectiveOptions['tone'],
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="neutral">Neutral</SelectItem>
+                    <SelectItem value="genz">Gen-Z</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Slang level</Label>
+                <Select
+                  value={options.perspective.slangLevel}
+                  onValueChange={(value) =>
+                    setOptions((prev) => ({
+                      ...prev,
+                      perspective: {
+                        ...prev.perspective,
+                        slangLevel: value as PerspectiveOptions['slangLevel'],
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="heavy">Heavy</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

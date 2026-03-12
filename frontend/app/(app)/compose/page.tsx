@@ -8,6 +8,7 @@ import {
   generateAnalysisFromText,
   generateCommentFromText,
   generateJokeFromText,
+  generatePerspectiveFromText,
   generateSummaryFromText,
   generateViralPostFromText,
   extractUrlText,
@@ -59,6 +60,10 @@ const defaultOptions: ComposeOptions = {
     audience: 'General audience',
     maxVariants: 2,
     factMode: true,
+  },
+  perspective: {
+    tone: 'neutral',
+    slangLevel: 'none',
   },
 };
 
@@ -195,6 +200,12 @@ export default function ComposePage() {
             max_variants: payload.options.comment.maxVariants,
             fact_mode: payload.options.comment.factMode,
           });
+        case 'perspective':
+          return generatePerspectiveFromText({
+            text: payload.text,
+            tone: payload.options.perspective.tone,
+            slang_level: payload.options.perspective.slangLevel,
+          });
         default:
           throw new Error('Unsupported action.');
       }
@@ -263,7 +274,7 @@ export default function ComposePage() {
   const draftCount = useMemo(() => drafts.length, [drafts.length]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid w-full min-w-0 gap-4 lg:gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <ComposeEditor
         text={text}
         onTextChange={setText}
@@ -362,6 +373,24 @@ ${variant.thread.join('\n')}` : '',
       return [comment.comment, comment.cta_question]
         .filter(Boolean)
         .join('\n\n');
+    }
+    case 'perspective': {
+      const parts = [
+        result.data.neutral_facts.length
+          ? `Neutral facts:\n- ${result.data.neutral_facts.join('\n- ')}`
+          : '',
+        result.data.what_we_know.length
+          ? `What we know:\n- ${result.data.what_we_know.join('\n- ')}`
+          : '',
+        result.data.what_is_unclear.length
+          ? `What is unclear:\n- ${result.data.what_is_unclear.join('\n- ')}`
+          : '',
+        result.data.angles.length
+          ? `Angles:\n${result.data.angles.map((a) => `${a.label}: ${a.summary}`).join('\n')}`
+          : '',
+        `Bias: ${result.data.scores.bias.label} | Clickbait: ${(result.data.scores.clickbait * 100).toFixed(0)}% | Evidence: ${(result.data.scores.evidence * 100).toFixed(0)}%`,
+      ].filter(Boolean);
+      return parts.join('\n\n');
     }
     default:
       return '';

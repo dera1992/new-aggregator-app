@@ -6,10 +6,11 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera, Loader2, ExternalLink, Zap } from 'lucide-react';
 
 import { changePassword } from '@/lib/api/auth';
 import { fetchProfile, updateProfile, uploadAvatar } from '@/lib/api/profile';
+import { createCheckoutSession, createPortalSession } from '@/lib/api/billing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export default function SettingsPage() {
   });
 
   const [defaults, setDefaults] = useState<GeneratorDefaults>(loadGeneratorDefaults());
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
 
   useEffect(() => {
     setDefaults(loadGeneratorDefaults());
@@ -113,6 +115,28 @@ export default function SettingsPage() {
     onSuccess: () => toast.success('Profile updated'),
     onError: (error: Error) => toast.error(error.message),
   });
+
+  const handleUpgrade = async (plan: 'pro' | 'business') => {
+    setIsBillingLoading(true);
+    try {
+      const { url } = await createCheckoutSession(plan);
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start checkout');
+      setIsBillingLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setIsBillingLoading(true);
+    try {
+      const { url } = await createPortalSession();
+      window.location.href = url;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to open billing portal');
+      setIsBillingLoading(false);
+    }
+  };
 
   const handleDefaultsSave = () => {
     saveGeneratorDefaults(defaults);
@@ -201,10 +225,84 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="break-words">Subscription</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <div>Tier: {profile.subscription_tier ?? 'N/A'}</div>
-            <div>Status: {profile.subscription_status ?? 'N/A'}</div>
-            <div>Expires: {profile.subscription_expires_at ?? 'N/A'}</div>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="space-y-1 text-sm">
+                <div className="text-muted-foreground">
+                  Plan:{' '}
+                  <span className="font-medium capitalize text-foreground">
+                    {profile.subscription_tier ?? 'free'}
+                  </span>
+                </div>
+                <div className="text-muted-foreground">
+                  Status:{' '}
+                  <span
+                    className={
+                      profile.subscription_status === 'active'
+                        ? 'font-medium text-green-600 dark:text-green-400'
+                        : profile.subscription_status === 'past_due'
+                          ? 'font-medium text-yellow-600 dark:text-yellow-400'
+                          : 'font-medium text-muted-foreground'
+                    }
+                  >
+                    {profile.subscription_status ?? 'inactive'}
+                  </span>
+                </div>
+                {profile.subscription_expires_at && (
+                  <div className="text-muted-foreground">
+                    Renews:{' '}
+                    <span className="text-foreground">
+                      {new Date(profile.subscription_expires_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {profile.subscription_status === 'active' ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManageBilling}
+                disabled={isBillingLoading}
+              >
+                {isBillingLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                )}
+                Manage subscription
+              </Button>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  size="sm"
+                  className="bg-[#4A90E2] text-white hover:bg-[#357abd]"
+                  onClick={() => handleUpgrade('pro')}
+                  disabled={isBillingLoading}
+                >
+                  {isBillingLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Zap className="mr-2 h-4 w-4" />
+                  )}
+                  Upgrade to Pro — $29/mo
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUpgrade('business')}
+                  disabled={isBillingLoading}
+                >
+                  {isBillingLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Zap className="mr-2 h-4 w-4" />
+                  )}
+                  Upgrade to Business — $99/mo
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

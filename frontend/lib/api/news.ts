@@ -76,12 +76,30 @@ export function readArticle(articleId: number) {
   });
 }
 
+export function unsaveArticle(articleId: number) {
+  return apiFetch<{ message: string }>(`/api/news/save/${articleId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function fetchSavedArticles() {
   return apiFetch<SavedArticlesResponse>(`/api/news/saved`);
 }
 
 export function fetchReadArticles() {
   return apiFetch<ReadArticlesResponse>(`/api/news/read-articles`);
+}
+
+export function unreadArticle(articleId: number) {
+  return apiFetch<{ message: string }>(`/api/news/read/${articleId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function clearReadHistory() {
+  return apiFetch<{ message: string }>('/api/news/read-articles', {
+    method: 'DELETE',
+  });
 }
 
 export function generateViralPost(payload: Record<string, unknown>) {

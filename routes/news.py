@@ -13,7 +13,7 @@ from services.comment_generator import generate_comment, CommentGenError
 from services.analysis_generator import generate_analysis, AnalysisGenError
 from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
-from services.perspective_generator import generate_perspective, PerspectiveError
+from services.perspective_generator import generate_perspective, generate_perspective_from_text, PerspectiveError
 from services.summary_generator import generate_summary, SummaryGenError
 from services.ai_router import PROMPT_VERSIONS, run_task
 from services.url_text_extractor import extract_text_from_url, URLExtractError
@@ -50,6 +50,19 @@ def _normalize_generation_payload(payload):
     if "fact_mode" in normalized:
         normalized["fact_mode"] = _normalize_fact_mode_value(normalized.get("fact_mode"))
     return normalized
+
+
+@news_bp.route('/api/news/sources', methods=['GET'])
+@token_required
+def get_sources():
+    rows = (
+        db.session.query(Article.source_domain)
+        .filter(Article.source_domain.isnot(None))
+        .distinct()
+        .order_by(Article.source_domain)
+        .all()
+    )
+    return jsonify({"sources": [r[0] for r in rows]})
 
 
 @news_bp.route('/api/news/feed', methods=['GET'])
@@ -338,6 +351,25 @@ def generate_perspective_endpoint():
     return jsonify(response)
 
 
+@news_bp.route('/api/news/generate-perspective-from-text', methods=['POST'])
+@token_required
+def generate_perspective_from_text_endpoint():
+    data = request.get_json(silent=True) or {}
+    text = (data.get('text') or '').strip()
+    if len(text) < 50:
+        return jsonify({'message': 'Provide at least 50 characters of text.'}), 400
+    tone = data.get('tone', 'neutral')
+    slang_level = data.get('slang_level', 'none')
+    try:
+        result = generate_perspective_from_text(text, tone, slang_level)
+    except PerspectiveError as exc:
+        return jsonify({'message': str(exc)}), 422
+    credit_err = check_and_deduct_credits(g.current_user, 'perspective', False)
+    if credit_err:
+        return credit_err
+    return jsonify(result)
+
+
 @news_bp.route("/api/news/save", methods=["POST"])
 @token_required
 def save_article():
@@ -361,6 +393,20 @@ def save_article():
     db.session.add(saved)
     db.session.commit()
     return jsonify({"message": "Article saved."}), 201
+
+
+@news_bp.route("/api/news/save/<int:article_id>", methods=["DELETE"])
+@token_required
+def unsave_article(article_id):
+    entry = SavedArticle.query.filter_by(
+        user_id=g.current_user.id,
+        article_id=article_id,
+    ).first()
+    if not entry:
+        return jsonify({"message": "Article not saved."}), 404
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"message": "Article removed from saved."}), 200
 
 
 @news_bp.route("/api/news/saved", methods=["GET"])
@@ -438,6 +484,25 @@ def list_read_articles():
                 "read_at": entry.created_at.isoformat(),
             })
     return jsonify({"articles": articles, "count": len(articles)})
+
+
+@news_bp.route("/api/news/read/<int:article_id>", methods=["DELETE"])
+@token_required
+def unread_article(article_id):
+    entry = ReadArticle.query.filter_by(user_id=g.current_user.id, article_id=article_id).first()
+    if not entry:
+        return jsonify({"message": "Article not in read history."}), 404
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({"message": "Removed from read history."}), 200
+
+
+@news_bp.route("/api/news/read-articles", methods=["DELETE"])
+@token_required
+def clear_read_history():
+    ReadArticle.query.filter_by(user_id=g.current_user.id).delete()
+    db.session.commit()
+    return jsonify({"message": "Read history cleared."}), 200
 
 
 @news_bp.route("/api/news/generate-viral-post", methods=["POST"])

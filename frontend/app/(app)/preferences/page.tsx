@@ -4,16 +4,26 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { X } from 'lucide-react';
 
-import { fetchPreferences, updatePreferences } from '@/lib/api/preferences';
+import { fetchPreferences, updatePreferences, fetchSources } from '@/lib/api/preferences';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/loading-state';
 import { ErrorState } from '@/components/error-state';
 import { Button } from '@/components/ui/button';
-import { TagInput } from '@/components/tag-input';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const CATEGORIES = ['Tech', 'Business', 'Sports', 'Politics', 'Lifestyle'];
 
 const timeSchema = z
   .string()
@@ -21,9 +31,15 @@ const timeSchema = z
 
 export default function PreferencesPage() {
   const queryClient = useQueryClient();
+
   const preferencesQuery = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
+  });
+
+  const sourcesQuery = useQuery({
+    queryKey: ['available-sources'],
+    queryFn: fetchSources,
   });
 
   const [categories, setCategories] = useState<string[]>([]);
@@ -67,6 +83,30 @@ export default function PreferencesPage() {
     mutation.mutate();
   };
 
+  const addCategory = (value: string) => {
+    if (value && !categories.includes(value)) {
+      setCategories([...categories, value]);
+    }
+  };
+
+  const removeCategory = (value: string) => {
+    setCategories(categories.filter((c) => c !== value));
+  };
+
+  const addSource = (value: string) => {
+    if (value && !sources.includes(value)) {
+      setSources([...sources, value]);
+    }
+  };
+
+  const removeSource = (value: string) => {
+    setSources(sources.filter((s) => s !== value));
+  };
+
+  const availableSources = sourcesQuery.data?.sources ?? [];
+  const unselectedCategories = CATEGORIES.filter((c) => !categories.includes(c));
+  const unselectedSources = availableSources.filter((s) => !sources.includes(s));
+
   return (
     <Card className="w-full min-w-0">
       <CardHeader>
@@ -79,18 +119,66 @@ export default function PreferencesPage() {
         )}
         {preferencesQuery.data && (
           <div className="space-y-6">
-            <TagInput
-              label="Preferred categories"
-              values={categories}
-              onChange={setCategories}
-              placeholder="Add category"
-            />
-            <TagInput
-              label="Preferred sources"
-              values={sources}
-              onChange={setSources}
-              placeholder="Add source"
-            />
+
+            {/* Categories */}
+            <div className="space-y-2">
+              <Label>Preferred categories</Label>
+              <Select onValueChange={addCategory} value="">
+                <SelectTrigger>
+                  <SelectValue placeholder={unselectedCategories.length ? 'Add a category' : 'All categories selected'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {unselectedCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {categories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => (
+                    <Badge key={cat} variant="secondary" className="flex items-center gap-1">
+                      {cat}
+                      <button type="button" onClick={() => removeCategory(cat)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sources */}
+            <div className="space-y-2">
+              <Label>Preferred sources</Label>
+              {sourcesQuery.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading sources…</p>
+              ) : (
+                <Select onValueChange={addSource} value="">
+                  <SelectTrigger>
+                    <SelectValue placeholder={unselectedSources.length ? 'Add a source' : availableSources.length ? 'All sources selected' : 'No sources available yet'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unselectedSources.map((src) => (
+                      <SelectItem key={src} value={src}>{src}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {sources.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {sources.map((src) => (
+                    <Badge key={src} variant="secondary" className="flex items-center gap-1">
+                      {src}
+                      <button type="button" onClick={() => removeSource(src)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Digest time */}
             <div className="space-y-2">
               <Label htmlFor="digestTime">Digest time (HH:MM)</Label>
               <Input
@@ -101,6 +189,8 @@ export default function PreferencesPage() {
               />
               {timeError && <p className="text-xs text-destructive">{timeError}</p>}
             </div>
+
+            {/* Digest toggle */}
             <div className="flex items-center justify-between rounded-md border border-border p-4">
               <div>
                 <Label>Digest enabled</Label>
@@ -110,6 +200,7 @@ export default function PreferencesPage() {
               </div>
               <Switch checked={digestEnabled} onCheckedChange={setDigestEnabled} />
             </div>
+
             <Button onClick={handleSave} disabled={mutation.isPending}>
               {mutation.isPending ? 'Saving...' : 'Save preferences'}
             </Button>

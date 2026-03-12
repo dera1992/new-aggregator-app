@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   fetchFeed,
   fetchPersonalizedFeed,
+  saveArticle,
   type FeedQuery,
 } from '@/lib/api/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,8 @@ import { ErrorState } from '@/components/error-state';
 import { EmptyState } from '@/components/empty-state';
 import { PaginationControls } from '@/components/pagination-controls';
 import { Badge } from '@/components/ui/badge';
+import { Bookmark } from 'lucide-react';
+import { toast } from 'sonner';
 import { getToken } from '@/lib/auth/token';
 
 const feedCategoryOptions = [
@@ -141,8 +144,8 @@ export default function FeedPage() {
       onClick: () => applyQuickFilter({ category: 'Lifestyle' }),
     },
     {
-      label: 'Top Sources',
-      onClick: () => applyQuickFilter({ source: '' }),
+      label: 'Reset filters',
+      onClick: () => applyQuickFilter({ category: '', source: '', since: '' }),
     },
   ];
 
@@ -202,6 +205,20 @@ export default function FeedPage() {
                     Perspective
                   </Link>
                 </Button>
+                {story.lead_article_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      saveArticle(story.lead_article_id!).then(() =>
+                        toast.success('Story saved.'),
+                      ).catch(() => toast.error('Already saved or failed.'))
+                    }
+                  >
+                    <Bookmark className="mr-1 h-4 w-4" />
+                    Save
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

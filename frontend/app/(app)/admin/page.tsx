@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { fetchAdminUsers, updateUserRole } from '@/lib/api/admin';
+import { fetchAdminUsers, updateUserRole, runCluster } from '@/lib/api/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +18,12 @@ export default function AdminUsersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: fetchAdminUsers,
+  });
+
+  const clusterMutation = useMutation({
+    mutationFn: runCluster,
+    onSuccess: (res) => toast.success(res.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const mutation = useMutation({
@@ -47,6 +53,22 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>System jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={() => clusterMutation.mutate()}
+            disabled={clusterMutation.isPending}
+          >
+            {clusterMutation.isPending ? 'Clustering…' : 'Run clustering now'}
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Groups all summarized articles into stories. Runs automatically every 25 minutes.
+          </p>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Admin user management</CardTitle>

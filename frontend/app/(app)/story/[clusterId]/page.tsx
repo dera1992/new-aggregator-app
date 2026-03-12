@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
-import { fetchStory, generateComment, generateViralPost } from '@/lib/api/news';
+import { fetchStory, generateComment, generateViralPost, saveArticle, readArticle } from '@/lib/api/news';
 import { usePerspective } from '@/hooks/usePerspective';
 import type { PerspectiveSlangLevel, PerspectiveTone } from '@/types/news';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -329,19 +329,36 @@ export default function StoryPage() {
               </p>
               <div className="space-y-2">
                 {storyQuery.data.sources.map((source) => (
-                  <div key={source.url} className="text-sm">
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {source.title}
-                    </a>
-                    <span className="text-muted-foreground">
-                      {' '}
-                      · {source.name}
-                    </span>
+                  <div key={source.url} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                        onClick={() => source.article_id && readArticle(source.article_id).catch(() => {})}
+                      >
+                        {source.title}
+                      </a>
+                      <span className="text-muted-foreground">
+                        {' '}
+                        · {source.name}
+                      </span>
+                    </div>
+                    {source.article_id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto shrink-0 px-2 py-0.5 text-xs text-muted-foreground hover:text-primary"
+                        onClick={() =>
+                          saveArticle(source.article_id!).then(() =>
+                            toast.success('Article saved.'),
+                          ).catch(() => toast.error('Failed to save.'))
+                        }
+                      >
+                        Save
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>

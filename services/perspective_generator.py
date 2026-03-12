@@ -171,6 +171,59 @@ def _ensure_required_blocks(data: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def generate_perspective_from_text(text: str, tone: str, slang_level: str) -> dict[str, Any]:
+    context = {
+        "text": text[:8000],
+        "tone": tone,
+        "slang_level": slang_level,
+    }
+
+    system_prompt = (
+        "You generate perspective analysis for news text. "
+        "Return STRICT JSON only (no markdown) that matches this shape: "
+        "neutral_facts[], what_we_know[], what_is_unclear[], angles[], "
+        "sentiment, scores, generated_at. "
+        "Neutral facts first. Separate facts from claims. Do not invent quotes. "
+        "Angles must include: Supporters, Critics, Neutral context, Gen-Z take, Global view. "
+        "sentiment.top_emotions has objects {emotion, score}. "
+        "scores.bias.value must be between -1 and 1. "
+        "scores.clickbait and scores.evidence must be between 0 and 1."
+    )
+
+    user_prompt = (
+        "Generate a perspective analysis JSON for this news text:\n"
+        f"{json.dumps(context, ensure_ascii=False)}"
+    )
+
+    try:
+        response = _get_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.35,
+            response_format={"type": "json_object"},
+        )
+    except Exception as exc:
+        raise PerspectiveError(f"OpenAI request failed: {exc}") from exc
+
+    content = response.choices[0].message.content or ""
+    data = _safe_json_loads(content)
+    data = _normalize_perspective_payload(data, fallback_sources=[])
+    data = _ensure_required_blocks(data)
+    data["cluster_id"] = 0
+    data["sources"] = []
+    data["generated_at"] = datetime.now(timezone.utc).isoformat()
+
+    try:
+        validated = PerspectiveResponse.model_validate(data)
+    except Exception as exc:
+        raise PerspectiveError(f"Perspective validation failed: {exc}") from exc
+
+    return validated.model_dump()
+
+
 def generate_perspective(cluster_id: int, tone: str, slang_level: str) -> dict[str, Any]:
     articles = (
         Article.query.filter(Article.cluster_id == cluster_id)

@@ -25,3 +25,7 @@ export function updateUserRole(userId: number, role: string) {
     },
   );
 }
+
+export function runCluster() {
+  return apiFetch<{ message: string }>('/api/admin/run-cluster', { method: 'POST' });
+}

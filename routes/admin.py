@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from models.models import db, User
 from utils.decorators import token_required, role_required
+from services.clustering_engine import cluster_recent_articles
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -49,3 +50,19 @@ def update_user_role(user_id: int):
 @admin_bp.route("/api/admin/users/<int:user_id>/role", methods=["OPTIONS"])
 def update_user_role_options(user_id: int):
     return "", 200
+
+
+@admin_bp.route("/api/admin/run-cluster", methods=["OPTIONS"])
+def run_cluster_options():
+    return "", 200
+
+
+@admin_bp.route("/api/admin/run-cluster", methods=["POST"])
+@token_required
+@role_required({"admin"})
+def run_cluster():
+    try:
+        cluster_recent_articles()
+        return jsonify({"message": "Clustering complete."}), 200
+    except Exception as e:
+        return jsonify({"message": f"Clustering failed: {str(e)}"}), 500

@@ -12,7 +12,9 @@
       "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d \"{\"\"email\"\":\"\"ezechdr16@gmail.com\"\",\"\"password\"\":\"\"testpass\"\"}\")",
       "Bash(grep -n \"audienceOptions\\\\|brandVoiceOptions\\\\|commentAudienceOptions\\\\|\\\\[\\\\]$\\\\|= \\\\[\" c:/projects/news-aggregator-app/frontend/components/compose/ComposeEditor.tsx)",
       "Bash(npx shadcn@latest add dropdown-menu --yes)",
-      "Bash(npx shadcn@latest add dropdown-menu)"
+      "Bash(npx shadcn@latest add dropdown-menu)",
+      "Bash(find /c/projects/news-aggregator-app/frontend/app -type d -name \"*\\(app\\)*\")",
+      "Bash(grep -r \"STRIPE\\\\|stripe\" /c/projects/news-aggregator-app --include=*.py --include=*.ts --include=*.tsx --include=*.json --include=.env*)"
     ]
   }
 }

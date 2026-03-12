@@ -51,6 +51,8 @@ class UserProfile(db.Model):
     subscription_tier = db.Column(db.String(50), default="free")
     subscription_status = db.Column(db.String(50), default="inactive")
     subscription_expires_at = db.Column(db.DateTime)
+    stripe_customer_id = db.Column(db.String(255), unique=True)
+    stripe_subscription_id = db.Column(db.String(255), unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

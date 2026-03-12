@@ -3,12 +3,14 @@ import type {
   GenerateAnalysisFromTextRequest,
   GenerateCommentFromTextRequest,
   GenerateJokeFromTextRequest,
+  GeneratePerspectiveFromTextRequest,
   GenerateSummaryRequest,
   GenerateSummaryResponse,
   GenerateViralPostFromTextRequest,
   ExtractUrlTextRequest,
   ExtractUrlTextResponse,
 } from '@/types/compose';
+import type { PerspectiveResponse } from '@/types/news';
 import type {
   CommentResponse,
   GenerateAnalysisResponse,
@@ -52,6 +54,13 @@ export function generateCommentFromText(
   payload: GenerateCommentFromTextRequest,
 ) {
   return apiFetch<CommentResponse>('/api/news/generate-comment', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function generatePerspectiveFromText(payload: GeneratePerspectiveFromTextRequest) {
+  return apiFetch<PerspectiveResponse>('/api/news/generate-perspective-from-text', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

@@ -1,6 +1,10 @@
 import { apiFetch } from '@/lib/api/client';
 import type { PreferencesResponse, PreferencesUpdatePayload } from '@/types/preferences';
 
+export function fetchSources() {
+  return apiFetch<{ sources: string[] }>('/api/news/sources');
+}
+
 export function fetchPreferences() {
   return apiFetch<PreferencesResponse>('/api/user/preferences');
 }

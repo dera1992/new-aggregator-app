@@ -1,6 +1,6 @@
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, EVENT_JOB_MISSED
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from services.clustering_engine import cluster_recent_articles
 from services.scraper import run_harvester
@@ -78,7 +78,8 @@ def start_background_jobs(app):
         next_run_time=datetime.now(),
     )
 
-    # Step 3: Group into Clusters (Every 25m, run immediately on startup)
+    # Step 3: Group into Clusters (Every 25m, first run 5m after startup
+    # to let the scraper + summarizer finish their initial pass first)
     scheduler.add_job(
         id="cluster_recent_articles",
         name="Cluster recent articles",
@@ -90,7 +91,7 @@ def start_background_jobs(app):
         ),
         trigger="interval",
         minutes=25,
-        next_run_time=datetime.now(),
+        next_run_time=datetime.now() + timedelta(minutes=5),
     )
 
     # Step 4: Send daily digests (Every 15m)

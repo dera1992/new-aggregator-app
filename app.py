@@ -9,6 +9,7 @@ from routes.admin import admin_bp
 from routes.profile import profile_bp
 from routes.preferences import preferences_bp
 from routes.oauth import oauth_bp
+from routes.billing import billing_bp
 
 
 def create_app():
@@ -42,6 +43,10 @@ def create_app():
     app.config['FACEBOOK_CLIENT_SECRET'] = os.getenv('FACEBOOK_APP_SECRET', '')
     app.config['X_CLIENT_ID'] = os.getenv('X_CLIENT_ID', '')
     app.config['X_CLIENT_SECRET'] = os.getenv('X_CLIENT_SECRET', '')
+    app.config['STRIPE_SECRET_KEY'] = os.getenv('STRIPE_SECRET_KEY', '')
+    app.config['STRIPE_WEBHOOK_SECRET'] = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+    app.config['STRIPE_PRO_PRICE_ID'] = os.getenv('STRIPE_PRO_PRICE_ID', '')
+    app.config['STRIPE_BUSINESS_PRICE_ID'] = os.getenv('STRIPE_BUSINESS_PRICE_ID', '')
 
     # Use Redis for rate-limit storage when available, fall back to memory
     redis_url = os.getenv("REDIS_URL")
@@ -84,6 +89,11 @@ def create_app():
     )
 
     @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            return "", 204
+
+    @app.before_request
     def csrf_protect():
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return
@@ -104,6 +114,7 @@ def create_app():
     app.register_blueprint(news_bp)
     app.register_blueprint(preferences_bp)
     app.register_blueprint(oauth_bp)
+    app.register_blueprint(billing_bp)
 
     db.init_app(app)
     return app
