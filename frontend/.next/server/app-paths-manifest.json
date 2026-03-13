@@ -1,8 +1,3 @@
 {
-  "/(app)/feed/page": "app/(app)/feed/page.js",
-  "/(app)/read/page": "app/(app)/read/page.js",
-  "/(app)/compose/page": "app/(app)/compose/page.js",
-  "/(app)/story/[clusterId]/page": "app/(app)/story/[clusterId]/page.js",
-  "/(app)/archive/page": "app/(app)/archive/page.js",
-  "/(app)/admin/page": "app/(app)/admin/page.js"
+  "/(app)/feed/page": "app/(app)/feed/page.js"
 }

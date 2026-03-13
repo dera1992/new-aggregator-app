@@ -121,6 +121,8 @@ def run_harvester():
                 normalized_link = _normalize_source_url(link)
 
                 # URL dedupe (in-memory + persisted), now using normalized URLs.
+                if len(normalized_link) > 500:
+                    continue
                 if (
                     normalized_link in seen_urls
                     or Article.query.filter_by(source_url=normalized_link).first()
@@ -176,3 +178,78 @@ def run_harvester():
                 seen_urls.add(normalized_link)
 
     db.session.commit()
+
+
+def run_trending_harvester(count: int = 10):
+    """
+    Fetches currently trending topics via Google Trends and scrapes
+    Google News RSS for each topic, inserting new articles into the DB.
+    Category is left unset so the AI summarizer assigns the real category.
+    """
+    from urllib.parse import quote_plus
+    from services.trends_fetcher import get_trending_topics
+
+    topics = get_trending_topics(count=count)
+    if not topics:
+        print("[trending] No trending topics available, skipping.")
+        return
+
+    seen_urls: set[str] = set()
+    seen_hashes: set[str] = set()
+    total_added = 0
+
+    for topic in topics:
+        feed_url = (
+            f"https://news.google.com/rss/search"
+            f"?q={quote_plus(topic)}&hl=en-US&gl=US&ceid=US:en"
+        )
+        try:
+            feed = feedparser.parse(feed_url)
+        except Exception:
+            continue
+
+        for entry in getattr(feed, "entries", [])[:5]:
+            link = getattr(entry, "link", None)
+            title = getattr(entry, "title", None)
+            if not link or not title:
+                continue
+
+            normalized_link = _normalize_source_url(link)
+            if len(normalized_link) > 500:
+                continue
+            if (
+                normalized_link in seen_urls
+                or Article.query.filter_by(source_url=normalized_link).first()
+                or Article.query.filter_by(source_url=link).first()
+            ):
+                continue
+
+            source_domain = urlparse(normalized_link).netloc
+            rss_summary = _extract_rss_summary(entry)
+            raw_content = rss_summary[:2000] if rss_summary else title[:2000]
+
+            new_article = Article(
+                title=title,
+                source_url=normalized_link,
+                source_domain=source_domain,
+                raw_content=raw_content,
+                rss_summary=rss_summary,
+                fetch_status="rss_only",
+                created_at=datetime.utcnow(),
+            )
+            new_article.set_content_hash()
+
+            if new_article.content_hash:
+                if (
+                    new_article.content_hash in seen_hashes
+                    or Article.query.filter_by(content_hash=new_article.content_hash).first()
+                ):
+                    continue
+                seen_hashes.add(new_article.content_hash)
+
+            db.session.add(new_article)
+            seen_urls.add(normalized_link)
+            total_added += 1
+
+    db.session.commit()
+    print(f"[trending] Added {total_added} new trending articles from {len(topics)} topics.")

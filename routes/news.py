@@ -14,6 +14,7 @@ from services.analysis_generator import generate_analysis, AnalysisGenError
 from services.joke_generator import generate_joke, JokeGenError
 from services.viral_generator import generate_viral_post, ViralPostError
 from services.perspective_generator import generate_perspective, generate_perspective_from_text, PerspectiveError
+from services.trends_fetcher import get_trending_topics
 from services.summary_generator import generate_summary, SummaryGenError
 from services.ai_router import PROMPT_VERSIONS, run_task
 from services.url_text_extractor import extract_text_from_url, URLExtractError
@@ -63,6 +64,14 @@ def get_sources():
         .all()
     )
     return jsonify({"sources": [r[0] for r in rows]})
+
+
+@news_bp.route('/api/news/trends', methods=['GET'])
+@token_required
+def get_trends():
+    count = min(int(request.args.get('count', 10)), 20)
+    topics = get_trending_topics(count=count)
+    return jsonify({"topics": topics})
 
 
 @news_bp.route('/api/news/feed', methods=['GET'])
@@ -244,6 +253,9 @@ def get_news_archive():
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
+    since = request.args.get("since")
+    summarized_only = request.args.get("summarized_only", "false").lower() == "true"
+
     query = Article.query
     if category:
         query = query.filter(Article.category == category)
@@ -255,6 +267,14 @@ def get_news_archive():
             query = query.filter(Article.created_at <= before_dt)
         except ValueError:
             return jsonify({"message": "Invalid 'before' format. Use ISO-8601."}), 400
+    if since:
+        try:
+            since_dt = datetime.fromisoformat(since)
+            query = query.filter(Article.created_at >= since_dt)
+        except ValueError:
+            return jsonify({"message": "Invalid 'since' format. Use ISO-8601."}), 400
+    if summarized_only:
+        query = query.filter(Article.ai_summary != None)
 
     total_count = query.count()
     articles = query.order_by(Article.created_at.desc()).offset(offset).limit(limit).all()

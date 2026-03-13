@@ -101,6 +101,10 @@ export type ReadArticlesResponse = {
   count: number;
 };
 
+export type TrendsResponse = {
+  topics: string[];
+};
+
 export type ViralPostVariant = {
   hook: string;
   body: string;

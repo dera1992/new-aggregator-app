@@ -3,7 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
 
 from services.clustering_engine import cluster_recent_articles
-from services.scraper import run_harvester
+from services.scraper import run_harvester, run_trending_harvester
 from services.ai_engine import process_unsummarized_news
 from services.digest_service import send_daily_digests
 from services.monitoring import (
@@ -94,7 +94,17 @@ def start_background_jobs(app):
         next_run_time=datetime.now() + timedelta(minutes=5),
     )
 
-    # Step 4: Send daily digests (Every 15m)
+    # Step 4: Scrape trending news from Google Trends (Every 30m, first run 3m after startup)
+    scheduler.add_job(
+        id="scrape_trending_news",
+        name="Scrape trending news",
+        func=lambda: run_with_context(run_trending_harvester, "scrape_trending_news", "locks:trending", 25 * 60),
+        trigger="interval",
+        minutes=30,
+        next_run_time=datetime.now() + timedelta(minutes=3),
+    )
+
+    # Step 5: Send daily digests (Every 15m)
     scheduler.add_job(
         id="send_daily_digests",
         name="Send daily digests",

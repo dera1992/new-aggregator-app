@@ -175,7 +175,7 @@ export default function ArchivePage() {
                                     href={`/story/${article.cluster_id}`}
                                     className="text-primary hover:underline"
                                   >
-                                    View story
+                                    #{article.cluster_id}
                                   </Link>
                                 ) : (
                                   '—'

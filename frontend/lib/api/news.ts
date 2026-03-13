@@ -58,6 +58,10 @@ export function fetchArchive(query: ArchiveQuery) {
   return apiFetch<ArchiveResponse>(`/api/news/archive${toQuery(query)}`);
 }
 
+export function fetchLatestArticles(query: { since?: string; category?: string; limit?: number; offset?: number }) {
+  return apiFetch<ArchiveResponse>(`/api/news/archive${toQuery({ ...query, summarized_only: 'true' })}`);
+}
+
 export function fetchStory(clusterId: string) {
   return apiFetch<StoryResponse>(`/api/news/story/${clusterId}`);
 }
@@ -100,6 +104,10 @@ export function clearReadHistory() {
   return apiFetch<{ message: string }>('/api/news/read-articles', {
     method: 'DELETE',
   });
+}
+
+export function fetchTrends() {
+  return apiFetch<{ topics: string[] }>('/api/news/trends');
 }
 
 export function generateViralPost(payload: Record<string, unknown>) {
