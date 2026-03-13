@@ -24,7 +24,6 @@ export function PreferencesScreen() {
 
   const [categories, setCategories] = useState<string[]>([]);
   const [sources, setSources] = useState<string[]>([]);
-  const [categoryInput, setCategoryInput] = useState('');
   const [sourceInput, setSourceInput] = useState('');
   const [digestTime, setDigestTime] = useState('08:00');
   const [digestEnabled, setDigestEnabled] = useState(true);
@@ -88,24 +87,15 @@ export function PreferencesScreen() {
               Add or remove categories to personalize your feed.
             </Text>
           </View>
-          <View className="flex-row gap-2">
-            <Input
-              placeholder="Add category"
-              value={categoryInput}
-              onChangeText={setCategoryInput}
-            />
-            <Button
-              label="Add"
-              variant="secondary"
-              onPress={() => {
-                addItem(categoryInput, categories, setCategories);
-                setCategoryInput('');
-              }}
-            />
-          </View>
           <View className="flex-row flex-wrap gap-2">
-            {categories.map((category) => (
-              <Chip key={category} label={category} onRemove={() => removeItem(category, categories, setCategories)} />
+            {['Tech', 'Business', 'Sports', 'Politics', 'Lifestyle', 'Health', 'Science', 'Entertainment', 'General'].map((cat) => (
+              <Chip
+                key={cat}
+                label={cat}
+                selected={categories.includes(cat)}
+                onRemove={categories.includes(cat) ? () => removeItem(cat, categories, setCategories) : undefined}
+                onPress={!categories.includes(cat) ? () => addItem(cat, categories, setCategories) : undefined}
+              />
             ))}
           </View>
         </Card>

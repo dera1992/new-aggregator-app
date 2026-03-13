@@ -16,7 +16,8 @@ import { Badge } from '@/components/Badge';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Screen } from '@/components/Screen';
 import { StoryCard } from '@/components/StoryCard';
-import { fetchFeed, fetchPersonalizedFeed, type FeedQuery } from '@/lib/api/news';
+import { ArticleCard } from '@/components/ArticleCard';
+import { fetchFeed, fetchPersonalizedFeed, fetchLatestArticles, type FeedQuery } from '@/lib/api/news';
 import type { RootStackParamList } from '@/navigation/root-navigation';
 import type { MainTabParamList } from '@/navigation/MainTabs';
 import { useTheme } from '@/lib/theme/ThemeProvider';
@@ -37,7 +38,7 @@ type NavigationProp = CompositeNavigationProp<
 
 export function FeedScreen() {
   const [filters, setFilters] = useState<FeedQuery>(defaultFilters);
-  const [segment, setSegment] = useState<'clustered' | 'personalized'>('clustered');
+  const [segment, setSegment] = useState<'latest' | 'clustered' | 'personalized'>('latest');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const navigation = useNavigation<NavigationProp>();
   const { isDark } = useTheme();
@@ -52,6 +53,30 @@ export function FeedScreen() {
     queryKey: ['personalized-feed', filters],
     queryFn: () => fetchPersonalizedFeed(filters),
   });
+
+  const latestQuery = useQuery({
+    queryKey: ['latest-articles', filters.category, filters.source],
+    queryFn: () =>
+      fetchLatestArticles({
+        since: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        category: filters.category,
+        limit: filters.limit,
+        offset: filters.offset,
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const trendingStoriesQuery = useQuery({
+    queryKey: ['trending-stories'],
+    queryFn: () =>
+      fetchFeed({
+        limit: 5,
+        since: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const trendingStories = trendingStoriesQuery.data?.stories ?? [];
 
   const data = segment === 'clustered' ? feedQuery.data : personalizedQuery.data;
   const isLoading = segment === 'clustered' ? feedQuery.isLoading : personalizedQuery.isLoading;
@@ -71,6 +96,10 @@ export function FeedScreen() {
     { label: 'Sports', onPress: () => updateFilter('category', 'Sports') },
     { label: 'Politics', onPress: () => updateFilter('category', 'Politics') },
     { label: 'Lifestyle', onPress: () => updateFilter('category', 'Lifestyle') },
+    {
+      label: 'Reset filters',
+      onPress: () => setFilters(defaultFilters),
+    },
   ];
 
   const stats = useMemo(() => {
@@ -86,9 +115,11 @@ export function FeedScreen() {
 
   return (
     <Screen
-      refreshing={isLoading}
+      refreshing={isLoading || latestQuery.isLoading}
       onRefresh={() => {
-        if (segment === 'clustered') {
+        if (segment === 'latest') {
+          latestQuery.refetch();
+        } else if (segment === 'clustered') {
           feedQuery.refetch();
         } else {
           personalizedQuery.refetch();
@@ -153,47 +184,117 @@ export function FeedScreen() {
           ) : null}
         </Card>
 
+        {trendingStories.length > 0 && (
+          <Card>
+            <Text style={[styles.filtersTitle, { color: theme.colors.textPrimary }]}>Trending Stories</Text>
+            <View style={{ gap: 10 }}>
+              {trendingStories.map((story) => (
+                <Button
+                  key={story.cluster_id}
+                  label={story.story_title}
+                  variant="ghost"
+                  onPress={() => navigation.navigate('StoryDetail', { clusterId: String(story.cluster_id) })}
+                />
+              ))}
+            </View>
+          </Card>
+        )}
+
         <SegmentedControl
           options={[
+            { label: 'Latest', value: 'latest' },
             { label: 'Clustered Feed', value: 'clustered' },
-            { label: 'Personalized Feed', value: 'personalized' },
+            { label: 'Personalized', value: 'personalized' },
           ]}
           value={segment}
-          onChange={(value) => setSegment(value as 'clustered' | 'personalized')}
+          onChange={(value) => setSegment(value as 'latest' | 'clustered' | 'personalized')}
         />
 
-        {segment === 'personalized' && personalizedQuery.data?.preferences ? (
-          <Card>
-            <Text style={[styles.prefText, { color: theme.colors.textSecondary }]}>Your current preferences</Text>
-            <View style={styles.badges}>
-              <Badge label={`Categories: ${personalizedQuery.data.preferences.preferred_categories.join(', ') || 'None'}`} />
-              <Badge label={`Sources: ${personalizedQuery.data.preferences.preferred_sources.join(', ') || 'None'}`} />
-            </View>
-            <Button label="Edit Preferences" variant="outline" onPress={() => navigation.navigate('Preferences')} />
-          </Card>
-        ) : null}
-
-        {isLoading ? (
-          <LoadingState label="Loading stories" />
-        ) : error ? (
-          <ErrorState message={error.message} />
-        ) : !data || data.stories.length === 0 ? (
-          <EmptyState message="No stories available for these filters." />
-        ) : (
-          <View style={styles.storyList}>
-            {data.stories.map((story) => (
-              <StoryCard
-                key={story.cluster_id}
-                story={story}
-                onOpen={() => navigation.navigate('StoryDetail', { clusterId: String(story.cluster_id) })}
+        {segment === 'latest' ? (
+          latestQuery.isLoading ? (
+            <LoadingState label="Loading latest articles" />
+          ) : latestQuery.error ? (
+            <ErrorState message={(latestQuery.error as Error).message} />
+          ) : !latestQuery.data || latestQuery.data.articles.length === 0 ? (
+            <EmptyState message="No articles in the last 24 hours." />
+          ) : (
+            <View style={styles.storyList}>
+              {latestQuery.data.articles.map((article, index) => (
+                <ArticleCard
+                  key={`${article.article_id ?? article.title}-${index}`}
+                  article={article}
+                  onOpenStory={
+                    article.cluster_id
+                      ? () => navigation.navigate('StoryDetail', { clusterId: String(article.cluster_id) })
+                      : undefined
+                  }
+                />
+              ))}
+              <Button
+                label="Load more"
+                variant="outline"
+                onPress={() => updateFilter('offset', (filters.offset ?? 0) + (filters.limit ?? 10))}
               />
-            ))}
-            <Button
-              label="Load more"
-              variant="outline"
-              onPress={() => updateFilter('offset', (filters.offset ?? 0) + (filters.limit ?? 10))}
-            />
-          </View>
+            </View>
+          )
+        ) : segment === 'personalized' ? (
+          <>
+            {personalizedQuery.data?.preferences ? (
+              <Card>
+                <Text style={[styles.prefText, { color: theme.colors.textSecondary }]}>Your current preferences</Text>
+                <View style={styles.badges}>
+                  <Badge label={`Categories: ${personalizedQuery.data.preferences.preferred_categories.join(', ') || 'None'}`} />
+                  <Badge label={`Sources: ${personalizedQuery.data.preferences.preferred_sources.join(', ') || 'None'}`} />
+                </View>
+                <Button label="Edit Preferences" variant="outline" onPress={() => navigation.navigate('Preferences')} />
+              </Card>
+            ) : null}
+            {personalizedQuery.isLoading ? (
+              <LoadingState label="Loading stories" />
+            ) : personalizedQuery.error ? (
+              <ErrorState message={(personalizedQuery.error as Error).message} />
+            ) : !personalizedQuery.data || personalizedQuery.data.stories.length === 0 ? (
+              <EmptyState message="No stories available for these filters." />
+            ) : (
+              <View style={styles.storyList}>
+                {personalizedQuery.data.stories.map((story) => (
+                  <StoryCard
+                    key={story.cluster_id}
+                    story={story}
+                    onOpen={() => navigation.navigate('StoryDetail', { clusterId: String(story.cluster_id) })}
+                  />
+                ))}
+                <Button
+                  label="Load more"
+                  variant="outline"
+                  onPress={() => updateFilter('offset', (filters.offset ?? 0) + (filters.limit ?? 10))}
+                />
+              </View>
+            )}
+          </>
+        ) : (
+          isLoading ? (
+            <LoadingState label="Loading stories" />
+          ) : error ? (
+            <ErrorState message={error.message} />
+          ) : !data || data.stories.length === 0 ? (
+            <EmptyState message="No stories available for these filters." />
+          ) : (
+            <View style={styles.storyList}>
+              {data.stories.map((story) => (
+                <StoryCard
+                  key={story.cluster_id}
+                  story={story}
+                  onOpen={() => navigation.navigate('StoryDetail', { clusterId: String(story.cluster_id) })}
+                />
+              ))}
+              <Button
+                label="Load more"
+                variant="outline"
+                onPress={() => updateFilter('offset', (filters.offset ?? 0) + (filters.limit ?? 10))}
+              />
+            </View>
+          )
         )}
       </View>
     </Screen>

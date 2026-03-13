@@ -105,6 +105,13 @@ export async function saveArticle(articleId: number) {
   return data;
 }
 
+export async function unsaveArticle(articleId: number) {
+  const { data } = await apiClient.delete<{ message: string }>(
+    `/api/news/save/${articleId}`,
+  );
+  return data;
+}
+
 export async function readArticle(articleId: number) {
   const { data } = await apiClient.post<{ message: string }>(`/api/news/read`, {
     article_id: articleId,
@@ -120,6 +127,32 @@ export async function fetchSavedArticles() {
 
 export async function fetchReadArticles() {
   const { data } = await apiClient.get<ReadArticlesResponse>(
+    `/api/news/read-articles`,
+  );
+  return data;
+}
+
+export async function fetchLatestArticles(query: {
+  since?: string;
+  category?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const { data } = await apiClient.get<ArchiveResponse>(
+    `/api/news/archive${toQuery({ ...query, summarized_only: "true" })}`,
+  );
+  return data;
+}
+
+export async function unreadArticle(articleId: number) {
+  const { data } = await apiClient.delete<{ message: string }>(
+    `/api/news/read/${articleId}`,
+  );
+  return data;
+}
+
+export async function clearReadHistory() {
+  const { data } = await apiClient.delete<{ message: string }>(
     `/api/news/read-articles`,
   );
   return data;

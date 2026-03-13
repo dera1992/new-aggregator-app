@@ -11,12 +11,14 @@ export function ArticleCard({
   onOpenStory,
   onSave,
   onRead,
+  onRemove,
   showActions,
 }: {
   article: ArchiveArticle;
   onOpenStory?: () => void;
   onSave?: () => void;
   onRead?: () => void;
+  onRemove?: () => void;
   showActions?: boolean;
 }) {
   return (
@@ -43,6 +45,7 @@ export function ArticleCard({
         <View className="flex-row flex-wrap gap-2">
           {onSave ? <Button label="Save" variant="outline" onPress={onSave} /> : null}
           {onRead ? <Button label="Mark read" variant="outline" onPress={onRead} /> : null}
+          {onRemove ? <Button label="Remove" variant="ghost" onPress={onRemove} /> : null}
         </View>
       ) : null}
     </Card>
