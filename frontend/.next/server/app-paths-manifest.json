@@ -1,3 +1,7 @@
 {
-  "/(app)/feed/page": "app/(app)/feed/page.js"
+  "/(app)/archive/page": "app/(app)/archive/page.js",
+  "/(app)/story/[clusterId]/page": "app/(app)/story/[clusterId]/page.js",
+  "/(app)/feed/page": "app/(app)/feed/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(app)/admin/page": "app/(app)/admin/page.js"
 }
