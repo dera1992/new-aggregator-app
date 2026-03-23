@@ -16,8 +16,6 @@ def process_unsummarized_news():
     Finds articles without summaries, generates them using AI,
     and updates the database.
     """
-    # 1. Fetch articles that haven't been processed yet
-    # Limit to 5-10 per run to stay within OpenAI rate limits and manage costs
     pending_articles = Article.query.filter(Article.ai_summary == None).order_by(Article.created_at.desc()).limit(30).all()
 
     if not pending_articles:
@@ -28,7 +26,6 @@ def process_unsummarized_news():
 
     for article in pending_articles:
         try:
-            # 2. Call OpenAI to summarize and categorize the raw content
             summary_style = article.summary_style or "bullets-3"
             if summary_style == "short":
                 summary_instruction = "Summarize this news in 2 short sentences."
@@ -53,7 +50,6 @@ def process_unsummarized_news():
                 response_format={"type": "json_object"},
             )
 
-            # 3. Parse response and update the database record
             raw = response.choices[0].message.content.strip()
             parsed = json.loads(raw)
             summary_raw = parsed.get("summary", "")

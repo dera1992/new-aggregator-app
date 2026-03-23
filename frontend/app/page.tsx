@@ -133,7 +133,7 @@ export default function HomePage() {
           <span className="inline-flex rounded-full bg-[#4A90E2]/10 px-4 py-2 text-sm font-medium text-[#4A90E2]">
             Modern news intelligence for busy teams
           </span>
-          <h1 className="font-heading mt-5 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
+          <h1 className="font-heading mt-5 text-3xl font-semibold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl xl:text-6xl">
             Track breaking stories, summarize instantly, publish faster
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">

@@ -14,7 +14,9 @@
       "Bash(npx shadcn@latest add dropdown-menu --yes)",
       "Bash(npx shadcn@latest add dropdown-menu)",
       "Bash(find /c/projects/news-aggregator-app/frontend/app -type d -name \"*\\(app\\)*\")",
-      "Bash(grep -r \"STRIPE\\\\|stripe\" /c/projects/news-aggregator-app --include=*.py --include=*.ts --include=*.tsx --include=*.json --include=.env*)"
+      "Bash(grep -r \"STRIPE\\\\|stripe\" /c/projects/news-aggregator-app --include=*.py --include=*.ts --include=*.tsx --include=*.json --include=.env*)",
+      "Read(//c/projects/news-aggregator-app/*/%ProgramData%/**)",
+      "Bash(grep -E '^[^/]*$|/$')"
     ]
   }
 }

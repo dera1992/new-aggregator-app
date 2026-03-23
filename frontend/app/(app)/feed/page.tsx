@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   fetchFeed,
   fetchPersonalizedFeed,
-  fetchLatestArticles,
   saveArticle,
   type FeedQuery,
 } from '@/lib/api/news';
@@ -60,17 +59,6 @@ export default function FeedPage() {
   const personalizedQuery = useQuery({
     queryKey: ['personalized-feed', filters],
     queryFn: () => fetchPersonalizedFeed(filters),
-  });
-
-  const latestQuery = useQuery({
-    queryKey: ['latest-articles', filters.category, filters.source],
-    queryFn: () => fetchLatestArticles({
-      since: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      category: filters.category,
-      limit: filters.limit,
-      offset: filters.offset,
-    }),
-    staleTime: 5 * 60 * 1000,
   });
 
   const trendingStoriesQuery = useQuery({
@@ -396,60 +384,11 @@ export default function FeedPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="latest">
+      <Tabs defaultValue="clustered">
         <TabsList>
-          <TabsTrigger value="latest">Latest</TabsTrigger>
           <TabsTrigger value="clustered">Clustered Feed</TabsTrigger>
           <TabsTrigger value="personalized">Personalized Feed</TabsTrigger>
         </TabsList>
-        <TabsContent value="latest">
-          {latestQuery.isLoading && <LoadingState label="Loading latest articles" />}
-          {latestQuery.error && <ErrorState message={(latestQuery.error as Error).message} />}
-          {latestQuery.data && latestQuery.data.articles.length === 0 && (
-            <EmptyState message="No articles in the last 24 hours." />
-          )}
-          {latestQuery.data && latestQuery.data.articles.length > 0 && (
-            <div className="space-y-4">
-              {latestQuery.data.articles.map((article, index) => (
-                <Card key={`${article.article_id}-${index}`} className="w-full min-w-0">
-                  <CardContent className="pt-4 space-y-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <a
-                        href={article.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="break-words font-semibold text-primary hover:underline"
-                      >
-                        {article.title}
-                      </a>
-                      {article.cluster_id && (
-                        <Link
-                          href={`/story/${article.cluster_id}`}
-                          className="shrink-0 text-xs text-primary hover:underline"
-                        >
-                          View story
-                        </Link>
-                      )}
-                    </div>
-                    {article.summary && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">{article.summary}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {article.source} · {new Date(article.timestamp).toLocaleString()}
-                      {article.category && ` · ${article.category}`}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-              <PaginationControls
-                limit={latestQuery.data.limit}
-                offset={latestQuery.data.offset}
-                total={latestQuery.data.count}
-                onPageChange={(nextOffset) => updateFilter('offset', nextOffset)}
-              />
-            </div>
-          )}
-        </TabsContent>
         <TabsContent value="clustered">
           {renderStories(
             feedQuery.data,

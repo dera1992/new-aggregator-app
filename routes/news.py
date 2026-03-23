@@ -21,7 +21,6 @@ from services.url_text_extractor import extract_text_from_url, URLExtractError
 from utils.decorators import token_required
 from utils.credits import check_and_deduct_credits
 
-# Define the Blueprint
 news_bp = Blueprint('news', __name__)
 
 

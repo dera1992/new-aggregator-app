@@ -41,25 +41,15 @@ export function RootNavigator() {
       };
 
   useEffect(() => {
-    console.log('🔍 Navigation effect triggered');
-    console.log('🔍 navigationRef.isReady():', navigationRef.isReady());
-    console.log('🔍 token exists:', !!token);
-
-    if (!navigationRef.isReady()) {
-      console.log('⏳ Navigation not ready yet, skipping...');
-      return;
-    }
+    if (!navigationRef.isReady()) return;
 
     const currentRouteName = navigationRef.getCurrentRoute()?.name;
-    console.log('🔍 Current route:', currentRouteName);
 
     if (token && currentRouteName !== 'Main' && currentRouteName !== 'StoryDetail') {
-      console.log('✅ Navigating to Main (user has token)');
       resetToRoot('Main');
     }
 
     if (!token && currentRouteName !== 'Auth') {
-      console.log('✅ Navigating to Auth (no token)');
       resetToRoot('Auth');
     }
   }, [token]);
@@ -77,14 +67,9 @@ export function RootNavigator() {
       ref={navigationRef}
       theme={navigationTheme}
       onReady={() => {
-        console.log('🎯 NavigationContainer ready');
-        console.log('🎯 Token exists:', !!token);
-
         if (token) {
-          console.log('🎯 Initial navigation: Main');
           resetToRoot('Main');
         } else {
-          console.log('🎯 Initial navigation: Auth');
           resetToRoot('Auth');
         }
       }}

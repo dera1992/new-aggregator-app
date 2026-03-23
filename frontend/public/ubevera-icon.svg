@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="border" x1="72" y1="72" x2="440" y2="440">
+      <stop offset="0%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#60A5FA"/>
+    </linearGradient>
+    <linearGradient id="uv" x1="140" y1="160" x2="380" y2="360">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="58%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#22C55E"/>
+    </linearGradient>
+  </defs>
+  <rect x="72" y="72" width="368" height="368" rx="82" stroke="url(#border)" stroke-width="18" fill="white"/>
+  <path d="M148 176V274C148 326 182 358 229 358C276 358 310 326 310 274V176H274V274C274 306 256 324 229 324C202 324 184 306 184 274V176H148Z" fill="url(#uv)"/>
+  <path d="M290 176L350 336C356 352 372 362 389 362C415 362 431 334 420 311L366 197C360 184 348 176 334 176H290Z" fill="url(#uv)"/>
+  <path d="M342 176L385 289L448 141L419 141C401 141 384 151 375 168L342 230" fill="url(#uv)"/>
+  <path d="M408 114 C411 129 418 136 433 139 C418 142 411 149 408 164 C405 149 398 142 383 139 C398 136 405 129 408 114Z" fill="#FACC15"/>
+</svg>

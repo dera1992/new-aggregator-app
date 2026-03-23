@@ -51,11 +51,8 @@ export function MarketingPageTemplate({
       </div>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/20 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="font-heading text-lg font-semibold tracking-tight text-[#4A90E2]"
-          >
-            News Aggregator
+          <Link href="/" className="flex items-center">
+            <img src="/ubevera-logo.svg" alt="Ubevera" className="h-6 w-auto sm:h-7" />
           </Link>
 
           <nav className="hidden items-center gap-8 text-sm font-medium tracking-wide text-[#333333] md:flex dark:text-slate-100">
@@ -165,9 +162,7 @@ export function MarketingPageTemplate({
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="font-heading text-base font-semibold text-white">
-                News Aggregator
-              </p>
+              <img src="/ubevera-logo.svg" alt="Ubevera" className="h-5 w-auto sm:h-6" />
               <p className="mt-3 text-sm leading-relaxed text-slate-400">
                 Real-time news intelligence for creators, journalists, and
                 analysts.

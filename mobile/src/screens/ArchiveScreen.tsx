@@ -112,12 +112,12 @@ export function ArchiveScreen() {
                 onSave={
                   article.article_id != null
                     ? () => saveMutation.mutate(article.article_id!)
-                    : undefined // TODO: Add save support once archive articles include article_id.
+                    : undefined
                 }
                 onRead={
                   article.article_id != null
                     ? () => readMutation.mutate(article.article_id!)
-                    : undefined // TODO: Add read support once archive articles include article_id.
+                    : undefined
                 }
               />
             ))}

@@ -1,5 +1,4 @@
 import datetime
-import os
 import jwt
 from flask import Blueprint, redirect, url_for, current_app, request, jsonify
 from models.models import db, User, UserProfile
@@ -86,7 +85,7 @@ def google_callback():
         user = _find_or_create_user(email, 'google', provider_id, name, avatar)
         jwt_token = _make_jwt(user)
         return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
-    except Exception as exc:
+    except Exception:
         current_app.logger.exception("Google OAuth error")
         return _error_redirect('google_failed')
 
@@ -114,7 +113,7 @@ def facebook_callback():
         user = _find_or_create_user(email, 'facebook', provider_id, name, avatar)
         jwt_token = _make_jwt(user)
         return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
-    except Exception as exc:
+    except Exception:
         current_app.logger.exception("Facebook OAuth error")
         return _error_redirect('facebook_failed')
 
@@ -144,6 +143,6 @@ def x_callback():
         user = _find_or_create_user(email, 'x', provider_id, name, avatar)
         jwt_token = _make_jwt(user)
         return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
-    except Exception as exc:
+    except Exception:
         current_app.logger.exception("X OAuth error")
         return _error_redirect('x_failed')

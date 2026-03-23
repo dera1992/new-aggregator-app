@@ -15,7 +15,6 @@ import { fetchReadArticles, unreadArticle, clearReadHistory } from '@/lib/api/ne
 import type { RootStackParamList } from '@/navigation/root-navigation';
 import type { MainTabParamList } from '@/navigation/MainTabs';
 
-
 type NavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'Read'>,
   NativeStackNavigationProp<RootStackParamList>

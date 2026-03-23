@@ -129,7 +129,7 @@ export function FeedScreen() {
       <View style={styles.container}>
         <Card>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Today&apos;s Top Stories</Text>
+            <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{"Today's Top Stories"}</Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
               Browse clustered summaries and tune your feed using quick filters.
             </Text>
@@ -139,23 +139,25 @@ export function FeedScreen() {
               <Button key={filter.label} label={filter.label} variant="secondary" onPress={filter.onPress} />
             ))}
           </ScrollView>
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
-              <Ionicons name="newspaper-outline" size={16} color={theme.colors.primary} />
-              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Stories</Text>
-              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.storyCount}</Text>
+          {segment === 'clustered' && (
+            <View style={styles.statsGrid}>
+              <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+                <Ionicons name="newspaper-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Stories</Text>
+                <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.storyCount}</Text>
+              </View>
+              <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+                <Ionicons name="globe-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Sources</Text>
+                <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.sourceCount}</Text>
+              </View>
+              <View style={[styles.statCardWide, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+                <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Last updated</Text>
+                <Text style={[styles.statTime, { color: theme.colors.textPrimary }]}>{stats.lastUpdated}</Text>
+              </View>
             </View>
-            <View style={[styles.statCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
-              <Ionicons name="globe-outline" size={16} color={theme.colors.primary} />
-              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Sources</Text>
-              <Text style={[styles.statValue, { color: theme.colors.textPrimary }]}>{stats.sourceCount}</Text>
-            </View>
-            <View style={[styles.statCardWide, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
-              <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
-              <Text style={[styles.statLabel, { color: theme.colors.textMuted }]}>Last updated</Text>
-              <Text style={[styles.statTime, { color: theme.colors.textPrimary }]}>{stats.lastUpdated}</Text>
-            </View>
-          </View>
+          )}
         </Card>
 
         <Card>

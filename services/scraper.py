@@ -161,7 +161,7 @@ def run_harvester():
                     rss_summary=rss_summary,
                     fetch_status=fetch_status,
                     category=category,
-                    created_at=datetime.utcnow(),  # if you have this field
+                    created_at=datetime.utcnow(),
                 )
                 new_article.set_content_hash()
 

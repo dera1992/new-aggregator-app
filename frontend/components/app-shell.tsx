@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   LogOut,
   Newspaper,
@@ -34,6 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { fetchProfile } from '@/lib/api/profile';
 
 const navItems = [
   { href: '/feed', label: 'Feed', icon: Newspaper },
@@ -56,6 +58,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: fetchProfile,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const displayName = profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0] || 'Account';
+
   const handleLogout = () => {
     clearToken();
     router.replace('/login');
@@ -65,11 +75,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen overflow-x-hidden bg-background">
       <div className="flex min-h-screen min-w-0">
         <aside className="hidden w-64 flex-col border-r border-border bg-card p-6 lg:flex">
-          <Link
-            href="/"
-            className="mb-6 text-lg font-semibold hover:text-primary"
-          >
-            News Aggregator
+          <Link href="/" className="mb-6 flex items-center">
+            <img src="/ubevera-logo.svg" alt="Ubevera" className="h-6 w-auto" />
           </Link>
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => {
@@ -103,11 +110,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="w-[280px] max-w-[85vw] p-6"
                   >
                     <SheetClose asChild>
-                      <Link
-                        href="/"
-                        className="mb-6 text-lg font-semibold hover:text-primary"
-                      >
-                        News Aggregator
+                      <Link href="/" className="mb-6 flex items-center">
+                        <img src="/ubevera-logo.svg" alt="Ubevera" className="h-6 w-auto" />
                       </Link>
                     </SheetClose>
                     <nav className="flex flex-col gap-2">
@@ -143,11 +147,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </nav>
                   </SheetContent>
                 </Sheet>
-                <Link
-                  href="/"
-                  className="text-lg font-semibold hover:text-primary lg:hidden"
-                >
-                  News Aggregator
+                <Link href="/" className="flex items-center lg:hidden">
+                  <img src="/ubevera-icon.svg" alt="Ubevera" className="h-6 w-6" />
                 </Link>
                 <div className="min-w-0">
                   <h1 className="truncate text-base font-semibold lg:text-lg">
@@ -165,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
                       <User className="h-4 w-4" />
-                      <span className="hidden sm:inline ml-1">Account</span>
+                      <span className="ml-1 max-w-[120px] truncate hidden sm:inline">{displayName}</span>
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>

@@ -6,7 +6,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Screen } from "@/components/Screen";
 import { Card } from "@/components/Card";
 import { Button } from "@/components/Button";
-import { ErrorState } from "@/components/ErrorState";
 import { createCheckoutSession } from "@/lib/api/billing";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { getTheme } from "@/lib/theme/tokens";
@@ -66,16 +65,12 @@ export function PricingScreen() {
   const { isDark } = useTheme();
   const theme = getTheme(isDark);
   const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const handlePlanPress = async (plan: Plan | null) => {
     if (!plan) {
       navigation.navigate("Register");
       return;
     }
-    // Paid plans require a logged-in session — go to login first
-    // Once logged in the user can upgrade from Settings
-    setCheckoutError(null);
     setLoadingPlan(plan);
     try {
       const { url } = await createCheckoutSession(plan);
@@ -104,8 +99,6 @@ export function PricingScreen() {
             Simple pricing for every stage. Upgrade any time.
           </Text>
         </View>
-
-        {checkoutError ? <ErrorState message={checkoutError} /> : null}
 
         {plans.map((plan) => (
           <Card

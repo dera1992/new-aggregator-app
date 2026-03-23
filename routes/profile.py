@@ -90,11 +90,6 @@ def serve_avatar(filename):
     return send_from_directory(upload_dir, filename)
 
 
-@profile_bp.route("/api/profile", methods=["OPTIONS"])
-def profile_options():
-    return "", 200
-
-
 @profile_bp.route("/api/profile", methods=["PUT"])
 @token_required
 def update_profile():

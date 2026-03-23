@@ -24,11 +24,6 @@ def list_users():
     return jsonify({"users": payload}), 200
 
 
-@admin_bp.route("/api/admin/users", methods=["OPTIONS"])
-def list_users_options():
-    return "", 200
-
-
 @admin_bp.route("/api/admin/users/<int:user_id>/role", methods=["PATCH"])
 @token_required
 @role_required({"admin"})
@@ -45,16 +40,6 @@ def update_user_role(user_id: int):
     user.role = new_role
     db.session.commit()
     return jsonify({"message": "Role updated.", "user_id": user.id, "role": user.role}), 200
-
-
-@admin_bp.route("/api/admin/users/<int:user_id>/role", methods=["OPTIONS"])
-def update_user_role_options(user_id: int):
-    return "", 200
-
-
-@admin_bp.route("/api/admin/run-cluster", methods=["OPTIONS"])
-def run_cluster_options():
-    return "", 200
 
 
 @admin_bp.route("/api/admin/run-cluster", methods=["POST"])

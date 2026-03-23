@@ -17,8 +17,16 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'News Aggregator',
-  description: 'Production-ready news aggregator frontend',
+  title: 'Ubevera',
+  description: 'Real-time news intelligence for creators, journalists, and analysts.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+    other: [
+      { rel: 'icon', url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { rel: 'icon', url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  },
 };
 
 export default function RootLayout({

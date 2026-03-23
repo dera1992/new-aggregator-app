@@ -1,5 +1,4 @@
 import React from "react";
-import { Pressable, Text } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -27,36 +26,12 @@ export function MainTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Feed"
-      screenOptions={({ route, navigation }) => ({
+      screenOptions={({ route }) => ({
         headerShown: true,
         tabBarStyle: { height: 60 },
         tabBarLabelStyle: { fontSize: 11, marginBottom: 6 },
         tabBarActiveTintColor: "#0084ff",
         tabBarInactiveTintColor: "#64748b",
-
-        headerRight:
-          route.name === "Feed"
-            ? () => (
-                <Pressable
-                  onPress={() => navigation.navigate("Compose")}
-                  style={({ pressed }) => ({
-                    opacity: pressed ? 0.8 : 1,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                  })}
-                >
-                  <Text
-                    style={{
-                      color: "#FF6600",
-                      fontWeight: "700",
-                      fontSize: 13,
-                    }}
-                  >
-                    Get Started
-                  </Text>
-                </Pressable>
-              )
-            : undefined,
 
         tabBarIcon: ({ color, size }) => {
           const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
