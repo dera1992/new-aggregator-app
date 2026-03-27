@@ -24,7 +24,17 @@
       "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/settings/page.tsx\")",
       "Bash(ls \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/success/\" \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/cancel/\")",
       "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/success/page.tsx\")",
-      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/cancel/page.tsx\")"
+      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/cancel/page.tsx\")",
+      "Bash(python -c \"import stripe; print\\(stripe.VERSION\\)\")",
+      "Bash(pip show:*)",
+      "Bash(where python:*)",
+      "Bash(where pip:*)",
+      "Bash(py -3 -m pip show stripe)",
+      "Bash(c:/projects/news-aggregator-app/.venv/Scripts/pip show:*)",
+      "Bash(c:/projects/news-aggregator-app/.venv/Scripts/python -c \"import stripe; print\\(stripe.VERSION\\)\")",
+      "Bash(c:/projects/news-aggregator-app/.venv/Scripts/pip list:*)",
+      "Bash(c:/projects/news-aggregator-app/.venv/Scripts/python -c \"import ast; ast.parse\\(open\\(''c:/projects/news-aggregator-app/routes/billing.py''\\).read\\(\\)\\); print\\(''syntax OK''\\)\")",
+      "Bash(c:/projects/news-aggregator-app/.venv/Scripts/python -c \":*)"
     ]
   }
 }

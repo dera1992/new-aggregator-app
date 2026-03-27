@@ -2,7 +2,7 @@
 AI credits enforcement and usage logging.
 
 Policy:
-- Free users start with 10 credits and reset to 10 every 30 days.
+- Free users start with 30 credits and reset to 30 every 30 days.
 - Subscribed users (tier != "free" AND status == "active") are never blocked.
 - Cache hits cost 0 credits for everyone.
 """
@@ -21,7 +21,7 @@ CREDITS_COST: dict[str, int] = {
     "summary": 1,
 }
 
-_RESET_BALANCE = 10
+_RESET_BALANCE = 30
 _RESET_DAYS = 30
 
 
@@ -38,7 +38,7 @@ def _is_subscribed(user) -> bool:
     return (
         profile is not None
         and profile.subscription_tier != "free"
-        and profile.subscription_status == "active"
+        and profile.subscription_status in ("active", "canceling")
     )
 
 
@@ -82,7 +82,7 @@ def check_and_deduct_credits(user, task_type: str, cache_hit: bool):
             jsonify({
                 "message": (
                     "You have run out of AI credits. "
-                    "Credits reset every 30 days or upgrade to Pro for unlimited access."
+                    "You've used all 30 AI credits. They reset every 30 days, or upgrade to Starter for unlimited access."
                 ),
                 "credits_balance": user.ai_credits_balance,
                 "credits_required": cost,

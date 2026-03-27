@@ -37,6 +37,35 @@ RSS_FEEDS = {
     ],
 }
 
+# Maps source domains to their primary country
+DOMAIN_COUNTRY: dict[str, str] = {
+    "www.nytimes.com": "United States",
+    "nytimes.com": "United States",
+    "techcrunch.com": "United States",
+    "www.theverge.com": "United States",
+    "www.cnbc.com": "United States",
+    "cnbc.com": "United States",
+    "www.espn.com": "United States",
+    "espn.com": "United States",
+    "rss.cnn.com": "United States",
+    "www.cnn.com": "United States",
+    "cnn.com": "United States",
+    "www.vogue.com": "United States",
+    "vogue.com": "United States",
+    "feeds.bbci.co.uk": "United Kingdom",
+    "www.bbc.co.uk": "United Kingdom",
+    "bbc.co.uk": "United Kingdom",
+    "www.bbc.com": "United Kingdom",
+    "bbc.com": "United Kingdom",
+    "www.theguardian.com": "United Kingdom",
+    "theguardian.com": "United Kingdom",
+    "reuters.com": "Global",
+    "www.reuters.com": "Global",
+    "reutersagency.com": "Global",
+    "www.reutersagency.com": "Global",
+    "news.google.com": "Global",
+}
+
 # Only attempt full-page scraping for these domains
 # NYTimes will be RSS-only (blocked)
 SCRAPE_ALLOWED_DOMAINS = {
@@ -161,6 +190,7 @@ def run_harvester():
                     rss_summary=rss_summary,
                     fetch_status=fetch_status,
                     category=category,
+                    country=DOMAIN_COUNTRY.get(source_domain, "Global"),
                     created_at=datetime.utcnow(),
                 )
                 new_article.set_content_hash()
@@ -235,6 +265,7 @@ def run_trending_harvester(count: int = 10):
                 raw_content=raw_content,
                 rss_summary=rss_summary,
                 fetch_status="rss_only",
+                country=DOMAIN_COUNTRY.get(source_domain, "Global"),
                 created_at=datetime.utcnow(),
             )
             new_article.set_content_hash()

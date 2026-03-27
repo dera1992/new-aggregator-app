@@ -85,6 +85,8 @@ def get_clustered_feed():
     category = request.args.get("category")
     source = request.args.get("source")
     since = request.args.get("since")
+    search = request.args.get("search", "").strip()
+    country = request.args.get("country", "").strip()
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
@@ -93,6 +95,15 @@ def get_clustered_feed():
         base_filter.append(Article.category == category)
     if source:
         base_filter.append(Article.source_domain == source)
+    if country:
+        base_filter.append(Article.country == country)
+    if search:
+        base_filter.append(
+            db.or_(
+                Article.title.ilike(f"%{search}%"),
+                Article.ai_summary.ilike(f"%{search}%"),
+            )
+        )
     if since:
         try:
             since_dt = datetime.fromisoformat(since)
@@ -165,6 +176,8 @@ def get_personalized_feed():
     category = request.args.get("category")
     source = request.args.get("source")
     since = request.args.get("since")
+    search = request.args.get("search", "").strip()
+    country = request.args.get("country", "").strip()
     limit = min(int(request.args.get("limit", 100)), 200)
     offset = int(request.args.get("offset", 0))
 
@@ -181,6 +194,15 @@ def get_personalized_feed():
         base_filter.append(Article.category == category)
     if source:
         base_filter.append(Article.source_domain == source)
+    if country:
+        base_filter.append(Article.country == country)
+    if search:
+        base_filter.append(
+            db.or_(
+                Article.title.ilike(f"%{search}%"),
+                Article.ai_summary.ilike(f"%{search}%"),
+            )
+        )
     if since:
         try:
             since_dt = datetime.fromisoformat(since)

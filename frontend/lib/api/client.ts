@@ -54,22 +54,32 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return data as T;
 }
 
+// Shared in-flight refresh promise — prevents concurrent 401s from each
+// triggering a separate refresh (which would blacklist the rotated token).
+let _refreshPromise: Promise<boolean> | null = null;
+
 async function _tryRefresh(): Promise<boolean> {
-  try {
-    const res = await fetch(`${baseUrl}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    if (data.token) {
-      setToken(data.token);
-      return true;
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (data.token) {
+        setToken(data.token);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    } finally {
+      _refreshPromise = null;
     }
-    return false;
-  } catch {
-    return false;
-  }
+  })();
+  return _refreshPromise;
 }
 
 export async function apiFetch<T>(

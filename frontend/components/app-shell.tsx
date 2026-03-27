@@ -16,6 +16,7 @@ import {
   Shield,
   ChevronDown,
   User,
+  CreditCard,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ const navItems = [
   { href: '/saved', label: 'Saved', icon: Bookmark },
   { href: '/read', label: 'Read', icon: CheckCircle2 },
   { href: '/preferences', label: 'Preferences', icon: SlidersHorizontal },
+  { href: '/billing', label: 'Billing', icon: CreditCard },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/admin', label: 'Admin', icon: Shield },
 ];

@@ -53,15 +53,23 @@ export function changePassword(currentPassword: string, newPassword: string) {
   });
 }
 
+let _refreshTokenPromise: Promise<AuthTokenResponse> | null = null;
+
 export function refreshAccessToken(): Promise<AuthTokenResponse> {
+  if (_refreshTokenPromise) return _refreshTokenPromise;
   const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
-  return fetch(`${baseUrl}/api/auth/refresh`, {
+  _refreshTokenPromise = fetch(`${baseUrl}/api/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
-  }).then(async (res) => {
-    if (!res.ok) throw new Error('Refresh failed');
-    return res.json();
-  });
+  })
+    .then(async (res) => {
+      if (!res.ok) throw new Error('Refresh failed');
+      return res.json() as Promise<AuthTokenResponse>;
+    })
+    .finally(() => {
+      _refreshTokenPromise = null;
+    });
+  return _refreshTokenPromise;
 }
 
 export function logoutApi(): Promise<void> {

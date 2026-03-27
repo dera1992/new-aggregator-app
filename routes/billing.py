@@ -46,15 +46,33 @@ def _price_id_for_plan(plan: str) -> str | None:
     return None
 
 
-def _sync_subscription(customer_id: str, subscription: dict) -> None:
+def _get(obj, key, default=None):
+    """Get a value from a Stripe SDK object or plain dict safely."""
+    try:
+        # Attribute access (Stripe v8 SDK objects)
+        val = getattr(obj, key, None)
+        if val is not None:
+            return val
+    except Exception:
+        pass
+    try:
+        # Dict-like access (webhook payloads / older SDK)
+        return obj.get(key, default)
+    except Exception:
+        return default
+
+
+def _sync_subscription(customer_id: str, subscription) -> None:
     """Write Stripe subscription state to UserProfile."""
     profile = UserProfile.query.filter_by(stripe_customer_id=customer_id).first()
     if not profile:
         return
 
-    status = subscription.get("status", "inactive")
+    status = _get(subscription, "status", "inactive")
+    cancel_at_period_end = _get(subscription, "cancel_at_period_end", False)
+
     if status in ("active", "trialing"):
-        profile.subscription_status = "active"
+        profile.subscription_status = "canceling" if cancel_at_period_end else "active"
     elif status in ("past_due", "unpaid"):
         profile.subscription_status = "past_due"
     elif status in ("canceled", "incomplete_expired"):
@@ -66,27 +84,32 @@ def _sync_subscription(customer_id: str, subscription: dict) -> None:
     else:
         profile.subscription_status = status
 
-    # Determine tier from the price amount or its metadata
-    items = subscription.get("items", {}).get("data", [])
-    tier = "pro"
-    if items:
-        price = items[0].get("price", {})
-        tier = price.get("metadata", {}).get("tier") or _tier_from_amount(price)
+    # Determine tier from price metadata, fall back to "starter"
+    tier = "starter"
+    try:
+        sub_items = _get(subscription, "items", None)
+        items_data = _get(sub_items, "data", []) if sub_items else []
+        if items_data:
+            price = _get(items_data[0], "price", None)
+            if price:
+                metadata = _get(price, "metadata", None) or {}
+                tier = (metadata.get("tier") if hasattr(metadata, "get") else None) or "starter"
+    except Exception:
+        tier = "starter"
 
     profile.subscription_tier = tier
-    profile.stripe_subscription_id = subscription.get("id")
+    profile.stripe_subscription_id = _get(subscription, "id")
 
-    period_end = subscription.get("current_period_end")
+    period_end = _get(subscription, "current_period_end")
     if period_end:
-        profile.subscription_expires_at = datetime.utcfromtimestamp(period_end)
+        profile.subscription_expires_at = datetime.utcfromtimestamp(int(period_end))
 
     db.session.commit()
 
 
 def _tier_from_amount(price: dict) -> str:
     """Fall back to inferring tier from price amount (cents)."""
-    amount = price.get("unit_amount", 0)
-    return "business" if amount >= 9900 else "pro"
+    return "starter"
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +124,7 @@ def create_checkout_session():
         return jsonify({"message": "Payments are not configured on this server."}), 503
 
     data = request.get_json(silent=True) or {}
-    plan = data.get("plan")  # "pro" | "business"
+    plan = data.get("plan")  # "starter"
     price_id = _price_id_for_plan(plan)
 
     if not price_id:
@@ -185,6 +208,151 @@ def payment_history():
             for inv in invoices.auto_paging_iter()
         ]
         return jsonify({"payments": payments}), 200
+    except stripe.error.StripeError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+
+@billing_bp.route("/api/billing/cancel", methods=["POST"])
+@token_required
+def cancel_subscription():
+    """
+    Schedule the subscription to cancel at the end of the current billing period.
+    The user keeps access until then; the webhook downgrades them when it expires.
+    """
+    stripe.api_key = _stripe_key()
+    if not stripe.api_key:
+        return jsonify({"message": "Payments are not configured."}), 503
+
+    profile = UserProfile.query.filter_by(user_id=g.current_user.id).first()
+    if not profile or not profile.stripe_subscription_id:
+        return jsonify({"message": "No active subscription found."}), 404
+
+    try:
+        stripe.Subscription.modify(
+            profile.stripe_subscription_id,
+            cancel_at_period_end=True,
+        )
+        profile.subscription_status = "canceling"
+        db.session.commit()
+        return jsonify({"canceled": True}), 200
+    except stripe.error.StripeError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+
+@billing_bp.route("/api/billing/resume", methods=["POST"])
+@token_required
+def resume_subscription():
+    """Re-enable auto-renewal for a subscription that was set to cancel at period end."""
+    stripe.api_key = _stripe_key()
+    if not stripe.api_key:
+        return jsonify({"message": "Payments are not configured."}), 503
+
+    profile = UserProfile.query.filter_by(user_id=g.current_user.id).first()
+    if not profile or not profile.stripe_subscription_id:
+        return jsonify({"message": "No subscription found."}), 404
+
+    try:
+        stripe.Subscription.modify(
+            profile.stripe_subscription_id,
+            cancel_at_period_end=False,
+        )
+        profile.subscription_status = "active"
+        db.session.commit()
+        return jsonify({"resumed": True}), 200
+    except stripe.error.StripeError as exc:
+        return jsonify({"message": str(exc)}), 502
+
+
+@billing_bp.route("/api/billing/sync-subscription", methods=["POST"])
+@token_required
+def sync_subscription():
+    """
+    Pull the live subscription state from Stripe and write it to the local DB.
+    Called from the settings page when the user's plan looks out of sync.
+    """
+    try:
+        stripe.api_key = _stripe_key()
+        if not stripe.api_key:
+            return jsonify({"message": "Payments are not configured."}), 503
+
+        profile = UserProfile.query.filter_by(user_id=g.current_user.id).first()
+        if not profile or not profile.stripe_customer_id:
+            return jsonify({"synced": False, "reason": "no_customer"}), 200
+
+        subscriptions = stripe.Subscription.list(
+            customer=profile.stripe_customer_id,
+            limit=5,
+        )
+        active = next(
+            (s for s in subscriptions.auto_paging_iter()
+             if s["status"] in ("active", "trialing", "past_due")),
+            None,
+        )
+
+        if not active:
+            if profile.subscription_tier != "free" or profile.subscription_status == "active":
+                profile.subscription_tier = "free"
+                profile.subscription_status = "inactive"
+                profile.stripe_subscription_id = None
+                profile.subscription_expires_at = None
+                db.session.commit()
+            return jsonify({"synced": True, "tier": "free", "status": "inactive"}), 200
+
+        _sync_subscription(profile.stripe_customer_id, active)
+
+        profile = UserProfile.query.filter_by(user_id=g.current_user.id).first()
+        return jsonify({
+            "synced": True,
+            "tier": profile.subscription_tier,
+            "status": profile.subscription_status,
+        }), 200
+
+    except stripe.error.StripeError as exc:
+        db.session.rollback()
+        return jsonify({"message": str(exc)}), 502
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception("sync_subscription error")
+        # Temporary: expose error detail for debugging — remove before production
+        return jsonify({"message": f"[DEBUG] {type(exc).__name__}: {exc}"}), 500
+
+
+@billing_bp.route("/api/billing/sync-checkout", methods=["POST"])
+@token_required
+def sync_checkout():
+    """
+    Called by the success page to immediately confirm and sync a completed
+    checkout session without waiting for a webhook delivery.
+    """
+    stripe.api_key = _stripe_key()
+    if not stripe.api_key:
+        return jsonify({"message": "Payments are not configured."}), 503
+
+    data = request.get_json(silent=True) or {}
+    session_id = data.get("session_id")
+    if not session_id:
+        return jsonify({"message": "session_id is required."}), 400
+
+    try:
+        session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=["subscription"],
+        )
+        # Verify ownership
+        if str(session.get("metadata", {}).get("user_id")) != str(g.current_user.id):
+            return jsonify({"message": "Session does not belong to this user."}), 403
+
+        if session.get("payment_status") != "paid":
+            return jsonify({"synced": False, "reason": "payment not completed"}), 200
+
+        subscription = session.get("subscription")
+        customer_id = session.get("customer")
+        if subscription and customer_id:
+            if isinstance(subscription, str):
+                subscription = stripe.Subscription.retrieve(subscription)
+            _sync_subscription(customer_id, subscription)
+
+        return jsonify({"synced": True}), 200
     except stripe.error.StripeError as exc:
         return jsonify({"message": str(exc)}), 502
 

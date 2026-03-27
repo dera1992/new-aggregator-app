@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -181,6 +181,7 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function StoryPage() {
+  const queryClient = useQueryClient();
   const params = useParams();
   const searchParams = useSearchParams();
   const clusterId = params.clusterId as string;
@@ -261,6 +262,7 @@ export default function StoryPage() {
         max_variants: values.maxVariants,
         fact_mode: values.factMode,
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['credits'] }),
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -274,6 +276,7 @@ export default function StoryPage() {
         max_variants: values.maxVariants,
         fact_mode: values.factMode,
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['credits'] }),
     onError: (error: Error) => toast.error(error.message),
   });
 

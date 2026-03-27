@@ -21,6 +21,8 @@ export type FeedQuery = {
   category?: string;
   source?: string;
   since?: string;
+  search?: string;
+  country?: string;
   limit?: number;
   offset?: number;
 };

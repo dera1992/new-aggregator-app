@@ -38,3 +38,22 @@ export function fetchCredits(): Promise<CreditsInfo> {
 export function fetchPaymentHistory(): Promise<{ payments: Payment[] }> {
   return apiFetch('/api/billing/payment-history');
 }
+
+export function syncCheckout(sessionId: string): Promise<{ synced: boolean; reason?: string }> {
+  return apiFetch('/api/billing/sync-checkout', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+}
+
+export function cancelSubscription(): Promise<{ canceled: boolean }> {
+  return apiFetch('/api/billing/cancel', { method: 'POST' });
+}
+
+export function resumeSubscription(): Promise<{ resumed: boolean }> {
+  return apiFetch('/api/billing/resume', { method: 'POST' });
+}
+
+export function syncSubscription(): Promise<{ synced: boolean; tier?: string; status?: string; reason?: string }> {
+  return apiFetch('/api/billing/sync-subscription', { method: 'POST' });
+}

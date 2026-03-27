@@ -15,6 +15,12 @@ with app.app_context():
     migrations = [
         ("user_profile", "stripe_customer_id", "VARCHAR(255)"),
         ("user_profile", "stripe_subscription_id", "VARCHAR(255)"),
+        ("user_profile", "subscription_tier", "VARCHAR(50) DEFAULT 'free'"),
+        ("user_profile", "subscription_status", "VARCHAR(50) DEFAULT 'inactive'"),
+        ("user_profile", "subscription_expires_at", "TIMESTAMP"),
+        ("user", "ai_credits_balance", "INTEGER DEFAULT 30"),
+        ("user", "ai_credits_reset_at", "TIMESTAMP"),
+        ("article", "country", "VARCHAR(100)"),
     ]
     with db.engine.connect() as conn:
         for table, column, col_type in migrations:

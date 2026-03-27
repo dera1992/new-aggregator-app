@@ -22,7 +22,7 @@ class User(db.Model):
     reset_token_hash = db.Column(db.String(64), index=True)
     reset_token_expires_at = db.Column(db.DateTime)
     password_changed_at = db.Column(db.DateTime)
-    ai_credits_balance = db.Column(db.Integer, default=10, nullable=False)
+    ai_credits_balance = db.Column(db.Integer, default=30, nullable=False)
     ai_credits_reset_at = db.Column(
         db.DateTime,
         default=lambda: datetime.utcnow() + timedelta(days=30),
@@ -70,6 +70,7 @@ class Article(db.Model):
     rss_summary = db.Column(db.Text)
     category = db.Column(db.String(50))
     cluster_id = db.Column(db.Integer)
+    country = db.Column(db.String(100), index=True)
     content_hash = db.Column(db.String(64), unique=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     processed_at = db.Column(db.DateTime)

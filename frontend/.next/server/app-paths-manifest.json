@@ -1,7 +1,7 @@
 {
-  "/page": "app/page.js",
-  "/(auth)/register/page": "app/(auth)/register/page.js",
-  "/(app)/feed/page": "app/(app)/feed/page.js",
+  "/(app)/billing/success/page": "app/(app)/billing/success/page.js",
+  "/(app)/compose/page": "app/(app)/compose/page.js",
   "/(app)/settings/page": "app/(app)/settings/page.js",
-  "/(app)/admin/page": "app/(app)/admin/page.js"
+  "/(app)/billing/page": "app/(app)/billing/page.js",
+  "/(app)/story/[clusterId]/page": "app/(app)/story/[clusterId]/page.js"
 }

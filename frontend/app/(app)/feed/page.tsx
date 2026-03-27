@@ -39,10 +39,19 @@ const feedCategoryOptions = [
   'Lifestyle',
 ] as const;
 
+const countryOptions = [
+  'All countries',
+  'United States',
+  'United Kingdom',
+  'Global',
+] as const;
+
 const defaultFilters: FeedQuery = {
   category: '',
   source: '',
   since: '',
+  search: '',
+  country: '',
   limit: 20,
   offset: 0,
 };
@@ -64,7 +73,7 @@ export default function FeedPage() {
   const trendingStoriesQuery = useQuery({
     queryKey: ['trending-stories'],
     queryFn: () => fetchFeed({
-      limit: 5,
+      limit: 3,
       since: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
     }),
     staleTime: 10 * 60 * 1000,
@@ -154,7 +163,7 @@ export default function FeedPage() {
     },
     {
       label: 'Reset filters',
-      onClick: () => applyQuickFilter({ category: '', source: '', since: '' }),
+      onClick: () => applyQuickFilter({ category: '', source: '', since: '', search: '', country: '' }),
     },
   ];
 
@@ -242,7 +251,7 @@ export default function FeedPage() {
     );
   };
 
-  const trendingStories = trendingStoriesQuery.data?.stories ?? [];
+  const trendingStories = (trendingStoriesQuery.data?.stories ?? []).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -331,56 +340,81 @@ export default function FeedPage() {
         <CardHeader>
           <CardTitle className="break-words">Filters</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Select
-            value={filters.category || 'All categories'}
-            onValueChange={(value) =>
-              updateFilter('category', value === 'All categories' ? '' : value)
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {feedCategoryOptions.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <CardContent className="space-y-3">
           <Input
             className="w-full"
-            placeholder="Source"
-            value={filters.source}
-            onChange={(event) => updateFilter('source', event.target.value)}
+            placeholder="Search stories…"
+            value={filters.search}
+            onChange={(event) => updateFilter('search', event.target.value)}
           />
-          <Input
-            className="w-full"
-            placeholder="Since (ISO)"
-            value={filters.since}
-            onChange={(event) => updateFilter('since', event.target.value)}
-          />
-          <Input
-            className="w-full"
-            type="number"
-            min={1}
-            placeholder="Limit"
-            value={filters.limit}
-            onChange={(event) =>
-              updateFilter('limit', Number(event.target.value))
-            }
-          />
-          <Input
-            className="w-full"
-            type="number"
-            min={0}
-            placeholder="Offset"
-            value={filters.offset}
-            onChange={(event) =>
-              updateFilter('offset', Number(event.target.value))
-            }
-          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <Select
+              value={filters.category || 'All categories'}
+              onValueChange={(value) =>
+                updateFilter('category', value === 'All categories' ? '' : value)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {feedCategoryOptions.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.country || 'All countries'}
+              onValueChange={(value) =>
+                updateFilter('country', value === 'All countries' ? '' : value)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Country" />
+              </SelectTrigger>
+              <SelectContent>
+                {countryOptions.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              className="w-full"
+              placeholder="Source domain"
+              value={filters.source}
+              onChange={(event) => updateFilter('source', event.target.value)}
+            />
+            <Input
+              className="w-full"
+              placeholder="Since (ISO)"
+              value={filters.since}
+              onChange={(event) => updateFilter('since', event.target.value)}
+            />
+            <Input
+              className="w-full"
+              type="number"
+              min={1}
+              placeholder="Limit"
+              value={filters.limit}
+              onChange={(event) =>
+                updateFilter('limit', Number(event.target.value))
+              }
+            />
+            <Input
+              className="w-full"
+              type="number"
+              min={0}
+              placeholder="Offset"
+              value={filters.offset}
+              onChange={(event) =>
+                updateFilter('offset', Number(event.target.value))
+              }
+            />
+          </div>
         </CardContent>
       </Card>
 

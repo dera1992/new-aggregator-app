@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import sentry_sdk
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -96,11 +99,6 @@ def create_app():
         if cors_origins_env and cors_origins_env.strip() != "*"
         else []
     )
-
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            return "", 204
 
     @app.before_request
     def csrf_protect():

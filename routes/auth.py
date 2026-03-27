@@ -39,7 +39,8 @@ def _make_refresh_token(user_id: int) -> str:
 
 
 def _set_refresh_cookie(response, refresh_token: str):
-    is_prod = current_app.config.get('FLASK_ENV') != 'development'
+    import os
+    is_prod = os.getenv('FLASK_ENV', 'production') != 'development'
     response.set_cookie(
         'refresh_token',
         refresh_token,

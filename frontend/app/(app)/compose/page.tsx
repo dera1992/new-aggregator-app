@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import {
@@ -78,6 +78,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function ComposePage() {
+  const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const [action, setAction] = useState<ComposeAction>('summary');
   const [options, setOptions] = useState<ComposeOptions>(defaultOptions);
@@ -213,6 +214,7 @@ export default function ComposePage() {
     onSuccess: (data, variables) => {
       setResult({ type: variables.action, data } as ComposeResult);
       toast.success('Generated successfully');
+      queryClient.invalidateQueries({ queryKey: ['credits'] });
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
