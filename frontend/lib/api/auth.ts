@@ -52,3 +52,18 @@ export function changePassword(currentPassword: string, newPassword: string) {
     }),
   });
 }
+
+export function refreshAccessToken(): Promise<AuthTokenResponse> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  return fetch(`${baseUrl}/api/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+  }).then(async (res) => {
+    if (!res.ok) throw new Error('Refresh failed');
+    return res.json();
+  });
+}
+
+export function logoutApi(): Promise<void> {
+  return apiFetch('/api/auth/logout', { method: 'POST' }).then(() => undefined).catch(() => undefined);
+}

@@ -20,8 +20,13 @@ from services.ai_router import PROMPT_VERSIONS, run_task
 from services.url_text_extractor import extract_text_from_url, URLExtractError
 from utils.decorators import token_required
 from utils.credits import check_and_deduct_credits
+from extensions import limiter
 
 news_bp = Blueprint('news', __name__)
+
+# Per-user rate limit applied to all AI generation endpoints.
+# 60 calls/hour is generous for legitimate use but blocks scripted abuse.
+_AI_RATE_LIMIT = "60 per hour"
 
 
 def _normalize_fact_mode_value(value):
@@ -332,6 +337,7 @@ def get_story(cluster_id):
 
 @news_bp.route('/api/news/generate-perspective', methods=['POST'])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_perspective_endpoint():
     payload = _normalize_generation_payload(request.get_json(silent=True) or {})
     try:
@@ -372,6 +378,7 @@ def generate_perspective_endpoint():
 
 @news_bp.route('/api/news/generate-perspective-from-text', methods=['POST'])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_perspective_from_text_endpoint():
     data = request.get_json(silent=True) or {}
     text = (data.get('text') or '').strip()
@@ -526,6 +533,7 @@ def clear_read_history():
 
 @news_bp.route("/api/news/generate-viral-post", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_viral_post_endpoint():
     payload = request.get_json(silent=True) or {}
     if "summary" not in payload and "text" in payload:
@@ -594,6 +602,7 @@ def generate_viral_post_endpoint():
 
 @news_bp.route("/api/news/generate-comment", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_comment_endpoint():
     payload = request.get_json(silent=True) or {}
     if "summary" not in payload and "text" in payload:
@@ -660,6 +669,7 @@ def generate_comment_endpoint():
 
 @news_bp.route("/api/news/generate-joke", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_joke_endpoint():
     payload = request.get_json(silent=True) or {}
     if "fact_mode" in payload:
@@ -729,6 +739,7 @@ def generate_joke_endpoint():
 
 @news_bp.route("/api/news/generate-analysis", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_analysis_endpoint():
     payload = request.get_json(silent=True) or {}
     if "summary" not in payload and "text" in payload:
@@ -796,6 +807,7 @@ def generate_analysis_endpoint():
 
 @news_bp.route("/api/news/extract-url-text", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def extract_url_text_endpoint():
     payload = request.get_json(silent=True) or {}
     try:
@@ -819,6 +831,7 @@ def extract_url_text_endpoint():
 
 @news_bp.route("/api/news/generate-summary", methods=["POST"])
 @token_required
+@limiter.limit(_AI_RATE_LIMIT)
 def generate_summary_endpoint():
     payload = request.get_json(silent=True) or {}
     try:

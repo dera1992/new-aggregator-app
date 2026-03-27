@@ -12,7 +12,7 @@ import { getTheme } from "@/lib/theme/tokens";
 import type { AuthStackParamList } from "@/navigation/AuthStack";
 
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList>;
-type Plan = "pro" | "business";
+type Plan = "starter";
 
 type PricingPlan = {
   name: string;
@@ -27,7 +27,7 @@ type PricingPlan = {
 
 const plans: PricingPlan[] = [
   {
-    name: "Starter",
+    name: "Free",
     price: "$0",
     period: "/month",
     description: "For individuals exploring the platform.",
@@ -36,8 +36,8 @@ const plans: PricingPlan[] = [
     cta: "Get started free",
   },
   {
-    name: "Pro",
-    price: "$29",
+    name: "Starter",
+    price: "$15",
     period: "/month",
     description: "For creators and small teams publishing frequently.",
     features: [
@@ -46,17 +46,8 @@ const plans: PricingPlan[] = [
       "Advanced analysis and viral tools",
     ],
     highlighted: true,
-    plan: "pro",
-    cta: "Get Pro",
-  },
-  {
-    name: "Business",
-    price: "$99",
-    period: "/month",
-    description: "For teams managing multi-channel news operations.",
-    features: ["Everything in Pro", "Team workspaces", "Shared prompt defaults", "Premium support"],
-    plan: "business",
-    cta: "Get Business",
+    plan: "starter",
+    cta: "Get Starter",
   },
 ];
 

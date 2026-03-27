@@ -2,7 +2,7 @@
 AI credits enforcement and usage logging.
 
 Policy:
-- Free users start with 10 credits and reset to 20 every 30 days.
+- Free users start with 10 credits and reset to 10 every 30 days.
 - Subscribed users (tier != "free" AND status == "active") are never blocked.
 - Cache hits cost 0 credits for everyone.
 """
@@ -21,7 +21,7 @@ CREDITS_COST: dict[str, int] = {
     "summary": 1,
 }
 
-_RESET_BALANCE = 20
+_RESET_BALANCE = 10
 _RESET_DAYS = 30
 
 

@@ -1,4 +1,4 @@
-import { clearToken, getToken } from '@/lib/auth/token';
+import { clearToken, getToken, setToken } from '@/lib/auth/token';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -8,7 +8,6 @@ if (!baseUrl) {
 
 export class ApiError extends Error {
   status: number;
-
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
@@ -32,9 +31,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
       const formattedErrors = errors
         .map((error) => {
           const detail = error.msg?.trim();
-          if (!detail) {
-            return '';
-          }
+          if (!detail) return '';
           const fieldPath = Array.isArray(error.loc)
             ? error.loc.filter((part) => typeof part === 'string').join('.')
             : '';
@@ -51,19 +48,28 @@ async function handleResponse<T>(response: Response): Promise<T> {
         message = formattedErrors.join(' ');
       }
     }
-
-    if (response.status === 401) {
-      const hadToken = Boolean(getToken());
-      clearToken();
-      if (hadToken && typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-    }
-
     throw new ApiError(message, response.status);
   }
 
   return data as T;
+}
+
+async function _tryRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (data.token) {
+      setToken(data.token);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function apiFetch<T>(
@@ -79,8 +85,33 @@ export async function apiFetch<T>(
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
+
+  // On 401, attempt a silent token refresh once then retry
+  if (response.status === 401) {
+    const refreshed = await _tryRefresh();
+    if (refreshed) {
+      const newToken = getToken();
+      const retryHeaders = new Headers(options.headers);
+      retryHeaders.set('Content-Type', 'application/json');
+      if (newToken) retryHeaders.set('Authorization', `Bearer ${newToken}`);
+      const retryResponse = await fetch(`${baseUrl}${path}`, {
+        ...options,
+        credentials: 'include',
+        headers: retryHeaders,
+      });
+      if (retryResponse.status !== 401) {
+        return handleResponse<T>(retryResponse);
+      }
+    }
+    // Refresh failed — clear token and redirect to login
+    clearToken();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }
 
   return handleResponse<T>(response);
 }

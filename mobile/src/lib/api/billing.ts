@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 
-export type Plan = 'pro' | 'business';
+export type Plan = 'starter';
 
 export async function createCheckoutSession(plan: Plan): Promise<{ url: string }> {
   const { data } = await apiClient.post<{ url: string }>(

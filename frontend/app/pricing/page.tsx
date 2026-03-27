@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createCheckoutSession, type Plan } from '@/lib/api/billing';
 import { getToken } from '@/lib/auth/token';
+import { useEffect, useState } from 'react';
 
 type PricingPlan = {
   name: string;
@@ -30,7 +30,7 @@ const navLinks = [
 
 const plans: PricingPlan[] = [
   {
-    name: 'Starter',
+    name: 'Free',
     price: '$0',
     period: '/month',
     description: 'For individuals exploring the platform.',
@@ -38,8 +38,8 @@ const plans: PricingPlan[] = [
     plan: null,
   },
   {
-    name: 'Pro',
-    price: '$29',
+    name: 'Starter',
+    price: '$15',
     period: '/month',
     description: 'For creators and small teams publishing frequently.',
     features: [
@@ -48,21 +48,18 @@ const plans: PricingPlan[] = [
       'Advanced analysis and viral tools',
     ],
     highlighted: true,
-    plan: 'pro',
-  },
-  {
-    name: 'Business',
-    price: '$99',
-    period: '/month',
-    description: 'For teams managing multi-channel news operations.',
-    features: ['Everything in Pro', 'Team workspaces', 'Shared prompt defaults', 'Premium support'],
-    plan: 'business',
+    plan: 'starter',
   },
 ];
 
 export default function PricingPage() {
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<Plan | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!getToken());
+  }, []);
 
   const handlePlanClick = async (plan: Plan | null) => {
     if (!plan) {
@@ -99,11 +96,11 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="mt-10 flex flex-col gap-6 sm:flex-row sm:justify-center sm:items-stretch sm:max-w-2xl sm:mx-auto">
           {plans.map((plan) => (
             <Card
               key={plan.name}
-              className={plan.highlighted ? 'border-[#4A90E2] shadow-md' : ''}
+              className={`flex-1 ${plan.highlighted ? 'border-[#4A90E2] shadow-md' : ''}`}
             >
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
@@ -132,7 +129,7 @@ export default function PricingPage() {
                   disabled={loadingPlan !== null}
                   onClick={() => handlePlanClick(plan.plan)}
                 >
-                  {loadingPlan === plan.plan ? (
+                  {loadingPlan !== null && loadingPlan === plan.plan ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : plan.plan ? (
                     <Zap className="mr-2 h-4 w-4" />
@@ -144,12 +141,21 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="text-[#4A90E2] hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {!isLoggedIn && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="text-[#4A90E2] hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
+        {isLoggedIn && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            <Link href="/feed" className="text-[#4A90E2] hover:underline">
+              Back to Feed
+            </Link>
+          </p>
+        )}
       </section>
     </MarketingPageTemplate>
   );

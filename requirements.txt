@@ -42,3 +42,9 @@ gunicorn==21.2.0
 
 # Payments
 stripe>=8.0.0
+
+# Email
+sendgrid==6.11.0
+
+# Monitoring
+sentry-sdk[flask]==2.19.2

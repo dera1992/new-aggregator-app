@@ -17,8 +17,22 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'Ubevera',
+  title: { default: 'Ubevera', template: '%s | Ubevera' },
   description: 'Real-time news intelligence for creators, journalists, and analysts.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  openGraph: {
+    type: 'website',
+    siteName: 'Ubevera',
+    title: 'Ubevera — Real-time News Intelligence',
+    description: 'Track breaking stories, summarize instantly, publish faster.',
+    images: [{ url: '/android-chrome-512x512.png', width: 512, height: 512, alt: 'Ubevera' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Ubevera — Real-time News Intelligence',
+    description: 'Track breaking stories, summarize instantly, publish faster.',
+    images: ['/android-chrome-512x512.png'],
+  },
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
@@ -27,6 +41,7 @@ export const metadata: Metadata = {
       { rel: 'icon', url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
   },
+  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({

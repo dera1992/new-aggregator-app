@@ -41,10 +41,8 @@ def _get_or_create_customer(user, profile: UserProfile) -> str:
 
 
 def _price_id_for_plan(plan: str) -> str | None:
-    if plan == "pro":
-        return current_app.config.get("STRIPE_PRO_PRICE_ID")
-    if plan == "business":
-        return current_app.config.get("STRIPE_BUSINESS_PRICE_ID")
+    if plan == "starter":
+        return current_app.config.get("STRIPE_STARTER_PRICE_ID")
     return None
 
 
@@ -154,6 +152,41 @@ def create_portal_session():
     )
 
     return jsonify({"url": portal.url}), 200
+
+
+@billing_bp.route("/api/billing/payment-history", methods=["GET"])
+@token_required
+def payment_history():
+    stripe.api_key = _stripe_key()
+    if not stripe.api_key:
+        return jsonify({"payments": []}), 200
+
+    profile = UserProfile.query.filter_by(user_id=g.current_user.id).first()
+    if not profile or not profile.stripe_customer_id:
+        return jsonify({"payments": []}), 200
+
+    try:
+        invoices = stripe.Invoice.list(
+            customer=profile.stripe_customer_id,
+            limit=24,
+            expand=["data.subscription"],
+        )
+        payments = [
+            {
+                "id": inv.id,
+                "date": inv.created,
+                "amount": inv.amount_paid / 100,
+                "currency": inv.currency.upper(),
+                "status": inv.status,
+                "description": inv.lines.data[0].description if inv.lines.data else "Subscription",
+                "invoice_url": inv.hosted_invoice_url,
+                "invoice_pdf": inv.invoice_pdf,
+            }
+            for inv in invoices.auto_paging_iter()
+        ]
+        return jsonify({"payments": payments}), 200
+    except stripe.error.StripeError as exc:
+        return jsonify({"message": str(exc)}), 502
 
 
 @billing_bp.route("/api/billing/webhook", methods=["POST"])

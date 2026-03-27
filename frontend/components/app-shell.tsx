@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { clearToken } from '@/lib/auth/token';
+import { logoutApi } from '@/lib/api/auth';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { fetchProfile } from '@/lib/api/profile';
 
@@ -66,7 +67,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const displayName = profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0] || 'Account';
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logoutApi();
+    } catch {
+      // ignore — still clear locally
+    }
     clearToken();
     router.replace('/login');
   };

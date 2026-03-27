@@ -1,10 +1,11 @@
 import datetime
+import uuid
 from urllib.parse import urlencode
 
 import jwt
-from flask import Blueprint, request, jsonify, current_app, g
+from flask import Blueprint, request, jsonify, current_app, g, make_response
 from models.models import db, User, UserProfile
-from services.email_service import send_email
+from services.email_service import send_confirmation_email, send_password_reset_email
 from utils.auth import (
     generate_token,
     hash_token,
@@ -13,7 +14,41 @@ from utils.auth import (
     token_expiry,
 )
 from utils.decorators import token_required
+from utils.redis_client import get_redis_client
 from extensions import limiter
+
+ACCESS_TOKEN_MINUTES = 60
+REFRESH_TOKEN_DAYS = 7
+
+
+def _make_access_token(user_id: int) -> str:
+    return jwt.encode({
+        'user_id': user_id,
+        'jti': str(uuid.uuid4()),
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_MINUTES),
+    }, current_app.config['SECRET_KEY'], algorithm="HS256")
+
+
+def _make_refresh_token(user_id: int) -> str:
+    return jwt.encode({
+        'user_id': user_id,
+        'jti': str(uuid.uuid4()),
+        'type': 'refresh',
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=REFRESH_TOKEN_DAYS),
+    }, current_app.config['SECRET_KEY'], algorithm="HS256")
+
+
+def _set_refresh_cookie(response, refresh_token: str):
+    is_prod = current_app.config.get('FLASK_ENV') != 'development'
+    response.set_cookie(
+        'refresh_token',
+        refresh_token,
+        httponly=True,
+        secure=is_prod,
+        samesite='Lax',
+        max_age=REFRESH_TOKEN_DAYS * 24 * 60 * 60,
+        path='/api/auth',
+    )
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -75,6 +110,7 @@ def register():
     new_user.confirm_token_hash = hash_token(confirm_token)
     new_user.confirm_token_expires_at = token_expiry(hours=24)
 
+    new_user.ai_credits_reset_at = datetime.datetime.utcnow() + datetime.timedelta(days=30)
     db.session.add(new_user)
     db.session.commit()
 
@@ -83,14 +119,7 @@ def register():
     db.session.commit()
 
     confirmation_link = build_confirmation_link(email, confirm_token)
-    send_email(
-        to_email=email,
-        subject="Confirm your account",
-        body=(
-            "Click this link to confirm your account:\n"
-            f"{confirmation_link}"
-        ),
-    )
+    send_confirmation_email(email, confirmation_link)
 
     return jsonify({"message": "User created successfully. Check email to confirm."}), 201
 
@@ -147,13 +176,12 @@ def login():
             return jsonify({"message": "Email not confirmed"}), 403
         if not user.is_active:
             return jsonify({"message": "User inactive"}), 403
-        # Create a token that expires in 24 hours
-        token = jwt.encode({
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        }, current_app.config['SECRET_KEY'], algorithm="HS256")
 
-        return jsonify({'token': token})
+        access_token = _make_access_token(user.id)
+        refresh_token = _make_refresh_token(user.id)
+        resp = make_response(jsonify({'token': access_token}))
+        _set_refresh_cookie(resp, refresh_token)
+        return resp, 200
 
     return jsonify({"message": "Invalid credentials"}), 401
 
@@ -180,14 +208,7 @@ def resend_confirmation():
     db.session.commit()
 
     confirmation_link = build_confirmation_link(email, confirm_token)
-    send_email(
-        to_email=email,
-        subject="Confirm your account",
-        body=(
-            "Click this link to confirm your account:\n"
-            f"{confirmation_link}"
-        ),
-    )
+    send_confirmation_email(email, confirmation_link)
     return jsonify({"message": "Confirmation email resent"}), 200
 
 
@@ -211,16 +232,7 @@ def forgot_password():
     db.session.commit()
 
     reset_link = build_reset_link(email, reset_token)
-    send_email(
-        to_email=email,
-        subject="Reset your password",
-        body=(
-            "You requested a password reset for your News Aggregator account.\n\n"
-            "Click the link below to set a new password:\n"
-            f"{reset_link}\n\n"
-            "This link expires in 2 hours. If you did not request this, you can ignore this email."
-        ),
-    )
+    send_password_reset_email(email, reset_link)
     return jsonify({"message": "If that account exists, a reset email has been sent."}), 200
 
 
@@ -281,3 +293,80 @@ def change_password():
     user.set_password(new_password)
     db.session.commit()
     return jsonify({"message": "Password changed successfully"}), 200
+
+
+@auth_bp.route('/api/auth/refresh', methods=['POST'])
+@limiter.limit("30 per hour")
+def refresh():
+    refresh_token = request.cookies.get('refresh_token')
+    if not refresh_token:
+        return jsonify({"message": "No refresh token."}), 401
+
+    try:
+        data = jwt.decode(refresh_token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+        if data.get('type') != 'refresh':
+            return jsonify({"message": "Invalid token type."}), 401
+
+        jti = data.get('jti')
+        redis = get_redis_client()
+        if jti and redis and redis.get(f"blacklist:{jti}"):
+            return jsonify({"message": "Token has been revoked."}), 401
+
+        user = db.session.get(User, data.get("user_id"))
+        if not user or not user.is_active:
+            return jsonify({"message": "User not found."}), 401
+
+        # Rotate: blacklist old refresh token, issue new pair
+        if jti and redis:
+            ttl = int(data['exp'] - datetime.datetime.utcnow().timestamp())
+            if ttl > 0:
+                redis.setex(f"blacklist:{jti}", ttl, "1")
+
+        new_access = _make_access_token(user.id)
+        new_refresh = _make_refresh_token(user.id)
+        resp = make_response(jsonify({"token": new_access}))
+        _set_refresh_cookie(resp, new_refresh)
+        return resp, 200
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"message": "Refresh token expired. Please log in again."}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"message": "Invalid refresh token."}), 401
+
+
+@auth_bp.route('/api/auth/logout', methods=['POST'])
+@token_required
+def logout():
+    # Blacklist the access token
+    raw = request.headers.get('Authorization', '').replace('Bearer ', '') or request.cookies.get('access_token', '')
+    if raw:
+        try:
+            data = jwt.decode(raw, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            jti = data.get('jti')
+            if jti:
+                redis = get_redis_client()
+                if redis:
+                    ttl = int(data['exp'] - datetime.datetime.utcnow().timestamp())
+                    if ttl > 0:
+                        redis.setex(f"blacklist:{jti}", ttl, "1")
+        except jwt.InvalidTokenError:
+            pass
+
+    # Blacklist the refresh token too
+    refresh_raw = request.cookies.get('refresh_token', '')
+    if refresh_raw:
+        try:
+            data = jwt.decode(refresh_raw, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            jti = data.get('jti')
+            if jti:
+                redis = get_redis_client()
+                if redis:
+                    ttl = int(data['exp'] - datetime.datetime.utcnow().timestamp())
+                    if ttl > 0:
+                        redis.setex(f"blacklist:{jti}", ttl, "1")
+        except jwt.InvalidTokenError:
+            pass
+
+    resp = make_response(jsonify({"message": "Logged out."}))
+    resp.delete_cookie('refresh_token', path='/api/auth')
+    return resp, 200

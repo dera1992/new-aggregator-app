@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from models.models import Article, User, UserPreferences
-from services.email_service import send_email
+from services.email_service import send_digest_email
 
 
 def _current_digest_time():
@@ -51,13 +51,4 @@ def send_daily_digests():
         if not stories:
             continue
 
-        lines = ["Here is your daily news digest:\n"]
-        for story in stories:
-            sources = ", ".join(sorted(set(story["sources"])))
-            lines.append(f"- {story['title']}\n  {story['summary']}\n  Sources: {sources}\n")
-
-        send_email(
-            to_email=user.email,
-            subject="Your Daily News Digest",
-            body="\n".join(lines),
-        )
+        send_digest_email(to_email=user.email, stories=stories)

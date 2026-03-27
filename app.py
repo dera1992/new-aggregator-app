@@ -1,8 +1,18 @@
 import os
+import sentry_sdk
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from extensions import limiter, oauth
 from models.models import db
+
+_sentry_dsn = os.getenv("SENTRY_DSN")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.2,   # capture 20% of transactions for performance
+        profiles_sample_rate=0.1,
+        send_default_pii=False,
+    )
 from routes.news import news_bp
 from routes.auth import auth_bp
 from routes.admin import admin_bp
@@ -25,7 +35,7 @@ def create_app():
     CORS(
         app,
         resources={r"/api/*": {"origins": cors_origins}},
-        supports_credentials=False,
+        supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
         methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     )
@@ -45,8 +55,7 @@ def create_app():
     app.config['X_CLIENT_SECRET'] = os.getenv('X_CLIENT_SECRET', '')
     app.config['STRIPE_SECRET_KEY'] = os.getenv('STRIPE_SECRET_KEY', '')
     app.config['STRIPE_WEBHOOK_SECRET'] = os.getenv('STRIPE_WEBHOOK_SECRET', '')
-    app.config['STRIPE_PRO_PRICE_ID'] = os.getenv('STRIPE_PRO_PRICE_ID', '')
-    app.config['STRIPE_BUSINESS_PRICE_ID'] = os.getenv('STRIPE_BUSINESS_PRICE_ID', '')
+    app.config['STRIPE_STARTER_PRICE_ID'] = os.getenv('STRIPE_STARTER_PRICE_ID', '')
 
     # Use Redis for rate-limit storage when available, fall back to memory
     redis_url = os.getenv("REDIS_URL")
@@ -117,6 +126,17 @@ def create_app():
     app.register_blueprint(billing_bp)
 
     db.init_app(app)
+
+    @app.get("/health")
+    def health():
+        try:
+            db.session.execute(db.text("SELECT 1"))
+            db_ok = True
+        except Exception:
+            db_ok = False
+        status = 200 if db_ok else 503
+        return jsonify({"status": "ok" if db_ok else "degraded", "db": db_ok}), status
+
     return app
 
 app = create_app()

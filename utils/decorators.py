@@ -2,18 +2,37 @@ import jwt
 from functools import wraps
 from flask import request, jsonify, current_app, g
 from models.models import User, db
+from utils.redis_client import get_redis_client
+
+
+def _extract_raw_token() -> str | None:
+    """Return raw JWT string from Authorization header or access_token cookie."""
+    auth = request.headers.get('Authorization', '')
+    if auth.startswith('Bearer '):
+        return auth[7:]
+    return request.cookies.get('access_token')
+
 
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if request.method == 'OPTIONS':
             return '', 204
-        token = request.headers.get('Authorization')
-        if not token:
+
+        raw = _extract_raw_token()
+        if not raw:
             return jsonify({'message': 'Token is missing!'}), 401
+
         try:
-            # Remove "Bearer " prefix if present
-            data = jwt.decode(token.replace("Bearer ", ""), current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            data = jwt.decode(raw, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            jti = data.get('jti')
+
+            # Check Redis blacklist
+            if jti:
+                redis = get_redis_client()
+                if redis and redis.get(f"blacklist:{jti}"):
+                    return jsonify({'message': 'Token has been revoked.'}), 401
+
             user = db.session.get(User, data.get("user_id"))
             if not user or not user.is_active:
                 return jsonify({'message': 'User is inactive or missing'}), 401
@@ -23,6 +42,7 @@ def token_required(f):
         except Exception:
             current_app.logger.exception("Unexpected token validation error.")
             return jsonify({'message': 'Token is invalid!'}), 401
+
         return f(*args, **kwargs)
     return decorated
 

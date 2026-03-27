@@ -16,7 +16,15 @@
       "Bash(find /c/projects/news-aggregator-app/frontend/app -type d -name \"*\\(app\\)*\")",
       "Bash(grep -r \"STRIPE\\\\|stripe\" /c/projects/news-aggregator-app --include=*.py --include=*.ts --include=*.tsx --include=*.json --include=.env*)",
       "Read(//c/projects/news-aggregator-app/*/%ProgramData%/**)",
-      "Bash(grep -E '^[^/]*$|/$')"
+      "Bash(grep -E '^[^/]*$|/$')",
+      "Bash(grep -rn \"unable to log\\\\|check your email for further\\\\|at this time\" c:/projects/news-aggregator-app/ --include=*.py --include=*.ts --include=*.tsx)",
+      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(auth\\)/login/page.tsx\")",
+      "Bash(ls \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/\")",
+      "Bash(ls \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/\")",
+      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/settings/page.tsx\")",
+      "Bash(ls \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/success/\" \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/cancel/\")",
+      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/success/page.tsx\")",
+      "Bash(cat \"c:/projects/news-aggregator-app/frontend/app/\\(app\\)/billing/cancel/page.tsx\")"
     ]
   }
 }

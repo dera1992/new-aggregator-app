@@ -1,24 +1,22 @@
-const TOKEN_KEY = 'auth_token';
+/**
+ * Access token stored in memory only (not localStorage) to prevent XSS theft.
+ * The httpOnly refresh cookie (set by backend) keeps the session alive across
+ * page reloads via /api/auth/refresh.
+ */
+
+let _accessToken: string | null = null;
 
 export function getToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return localStorage.getItem(TOKEN_KEY);
+  return _accessToken;
 }
 
 export function setToken(token: string) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  localStorage.setItem(TOKEN_KEY, token);
+  _accessToken = token;
 }
 
 export function clearToken() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  localStorage.removeItem(TOKEN_KEY);
+  _accessToken = null;
 }
 
-export { TOKEN_KEY };
+// Kept for any legacy references
+export const TOKEN_KEY = 'access_token';

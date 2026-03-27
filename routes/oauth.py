@@ -1,23 +1,20 @@
-import datetime
-import jwt
 from flask import Blueprint, redirect, url_for, current_app, request, jsonify
 from models.models import db, User, UserProfile
 from extensions import oauth
+from routes.auth import _make_access_token, _make_refresh_token, _set_refresh_cookie
 
 oauth_bp = Blueprint('oauth', __name__)
 
 FRONTEND_URL = lambda: current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
 
 
-def _make_jwt(user):
-    return jwt.encode(
-        {
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-        },
-        current_app.config['SECRET_KEY'],
-        algorithm='HS256',
-    )
+def _redirect_with_tokens(user):
+    """Issue a proper access+refresh token pair and redirect to the frontend callback."""
+    access_token = _make_access_token(user.id)
+    refresh_token = _make_refresh_token(user.id)
+    resp = redirect(f"{FRONTEND_URL()}/callback?token={access_token}")
+    _set_refresh_cookie(resp, refresh_token)
+    return resp
 
 
 def _find_or_create_user(email, provider, provider_id, name=None, avatar_url=None):
@@ -83,8 +80,7 @@ def google_callback():
         if not email or not provider_id:
             return _error_redirect('google_missing_info')
         user = _find_or_create_user(email, 'google', provider_id, name, avatar)
-        jwt_token = _make_jwt(user)
-        return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
+        return _redirect_with_tokens(user)
     except Exception:
         current_app.logger.exception("Google OAuth error")
         return _error_redirect('google_failed')
@@ -111,8 +107,7 @@ def facebook_callback():
         if not provider_id:
             return _error_redirect('facebook_missing_info')
         user = _find_or_create_user(email, 'facebook', provider_id, name, avatar)
-        jwt_token = _make_jwt(user)
-        return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
+        return _redirect_with_tokens(user)
     except Exception:
         current_app.logger.exception("Facebook OAuth error")
         return _error_redirect('facebook_failed')
@@ -141,8 +136,7 @@ def x_callback():
         if not provider_id:
             return _error_redirect('x_missing_info')
         user = _find_or_create_user(email, 'x', provider_id, name, avatar)
-        jwt_token = _make_jwt(user)
-        return redirect(f"{FRONTEND_URL()}/callback?token={jwt_token}")
+        return _redirect_with_tokens(user)
     except Exception:
         current_app.logger.exception("X OAuth error")
         return _error_redirect('x_failed')

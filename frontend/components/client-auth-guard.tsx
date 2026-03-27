@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getToken } from '@/lib/auth/token';
+import { getToken, setToken } from '@/lib/auth/token';
+import { refreshAccessToken } from '@/lib/api/auth';
 import { LoadingState } from '@/components/loading-state';
 
 export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
@@ -11,12 +12,26 @@ export function ClientAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      router.replace('/login');
-      return;
+    async function checkAuth() {
+      let token = getToken();
+      if (!token) {
+        // Attempt silent refresh via httpOnly cookie before redirecting
+        try {
+          const data = await refreshAccessToken();
+          if (data.token) {
+            setToken(data.token);
+            setChecking(false);
+            return;
+          }
+        } catch {
+          // refresh failed — send to login
+        }
+        router.replace('/login');
+        return;
+      }
+      setChecking(false);
     }
-    setChecking(false);
+    checkAuth();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

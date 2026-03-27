@@ -6,11 +6,11 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Camera, Loader2, ExternalLink, Zap } from 'lucide-react';
+import { Camera, Loader2, ExternalLink, Zap, Receipt } from 'lucide-react';
 
 import { changePassword } from '@/lib/api/auth';
 import { fetchProfile, updateProfile, uploadAvatar } from '@/lib/api/profile';
-import { createCheckoutSession, createPortalSession } from '@/lib/api/billing';
+import { createCheckoutSession, createPortalSession, fetchCredits, fetchPaymentHistory, type CreditsInfo, type Payment } from '@/lib/api/billing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,16 @@ export default function SettingsPage() {
   const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: fetchProfile,
+  });
+
+  const { data: creditsInfo } = useQuery<CreditsInfo>({
+    queryKey: ['credits'],
+    queryFn: fetchCredits,
+  });
+
+  const { data: paymentData } = useQuery<{ payments: Payment[] }>({
+    queryKey: ['payment-history'],
+    queryFn: fetchPaymentHistory,
   });
 
   useEffect(() => {
@@ -116,7 +126,7 @@ export default function SettingsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const handleUpgrade = async (plan: 'pro' | 'business') => {
+  const handleUpgrade = async (plan: 'starter') => {
     setIsBillingLoading(true);
     try {
       const { url } = await createCheckoutSession(plan);
@@ -278,7 +288,7 @@ export default function SettingsPage() {
                 <Button
                   size="sm"
                   className="bg-[#4A90E2] text-white hover:bg-[#357abd]"
-                  onClick={() => handleUpgrade('pro')}
+                  onClick={() => handleUpgrade('starter')}
                   disabled={isBillingLoading}
                 >
                   {isBillingLoading ? (
@@ -286,23 +296,95 @@ export default function SettingsPage() {
                   ) : (
                     <Zap className="mr-2 h-4 w-4" />
                   )}
-                  Upgrade to Pro — $29/mo
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUpgrade('business')}
-                  disabled={isBillingLoading}
-                >
-                  {isBillingLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Zap className="mr-2 h-4 w-4" />
-                  )}
-                  Upgrade to Business — $99/mo
+                  Upgrade to Starter — $15/mo
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Credits — only shown for free users */}
+      {creditsInfo && creditsInfo.plan === 'free' && (
+        <Card className="w-full min-w-0">
+          <CardHeader>
+            <CardTitle className="break-words">AI Credits</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-end justify-between text-sm">
+              <span className="text-muted-foreground">Remaining</span>
+              <span className="text-xl font-semibold tabular-nums">
+                {creditsInfo.ai_credits_balance}
+                <span className="text-sm font-normal text-muted-foreground"> / 10</span>
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#4A90E2] transition-all"
+                style={{ width: `${(creditsInfo.ai_credits_balance / 10) * 100}%` }}
+              />
+            </div>
+            {creditsInfo.ai_credits_reset_at && (
+              <p className="text-xs text-muted-foreground">
+                Resets on{' '}
+                {new Date(creditsInfo.ai_credits_reset_at).toLocaleDateString(undefined, {
+                  month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Upgrade to Starter for unlimited AI generations.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment History */}
+      {paymentData && paymentData.payments.length > 0 && (
+        <Card className="w-full min-w-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 break-words">
+              <Receipt className="h-4 w-4" /> Payment History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y divide-border text-sm">
+              {paymentData.payments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between py-3 gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{p.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(p.date * 1000).toLocaleDateString(undefined, {
+                        month: 'short', day: 'numeric', year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={
+                        p.status === 'paid'
+                          ? 'text-green-600 dark:text-green-400 font-medium'
+                          : p.status === 'open'
+                            ? 'text-yellow-600 dark:text-yellow-400 font-medium'
+                            : 'text-muted-foreground'
+                      }
+                    >
+                      {p.currency} {p.amount.toFixed(2)}
+                    </span>
+                    {p.invoice_url && (
+                      <a
+                        href={p.invoice_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#4A90E2] hover:underline"
+                      >
+                        View
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
