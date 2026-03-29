@@ -1,15 +1,18 @@
 import os
 import logging
-
-import requests as http
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
-BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+BREVO_SMTP_USER = os.getenv("BREVO_SMTP_USER")
+BREVO_SMTP_KEY  = os.getenv("BREVO_SMTP_KEY")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@ubevera.com")
-FROM_NAME = os.getenv("FROM_NAME", "Ubevera")
+FROM_NAME  = os.getenv("FROM_NAME", "Ubevera")
 
-_BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
+_SMTP_HOST = "smtp-relay.brevo.com"
+_SMTP_PORT = 587
 
 
 # ---------------------------------------------------------------------------
@@ -86,33 +89,29 @@ def _reset_password_html(link: str) -> str:
 # ---------------------------------------------------------------------------
 
 def send_email(to_email: str, subject: str, body: str, html: str | None = None) -> None:
-    """Send an email via Brevo. Falls back to console when BREVO_API_KEY is not set."""
-    if not BREVO_API_KEY:
-        logger.info("[email] BREVO_API_KEY not set — printing to console instead.")
+    """Send an email via Brevo SMTP relay. Falls back to console when credentials are not set."""
+    if not BREVO_SMTP_USER or not BREVO_SMTP_KEY:
+        logger.info("[email] Brevo SMTP credentials not set — printing to console instead.")
         print(f"\n[email] To: {to_email}\nSubject: {subject}\n\n{body}\n")
         return
 
-    payload: dict = {
-        "sender": {"name": FROM_NAME, "email": FROM_EMAIL},
-        "to": [{"email": to_email}],
-        "subject": subject,
-        "textContent": body,
-    }
-    if html:
-        payload["htmlContent"] = html
-
     try:
-        response = http.post(
-            _BREVO_SEND_URL,
-            headers={
-                "api-key": BREVO_API_KEY,
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=10,
-        )
-        response.raise_for_status()
-        logger.info("[email] Sent to %s — status %s", to_email, response.status_code)
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{FROM_NAME} <{FROM_EMAIL}>"
+        msg["To"] = to_email
+
+        msg.attach(MIMEText(body, "plain"))
+        if html:
+            msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP(_SMTP_HOST, _SMTP_PORT, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(BREVO_SMTP_USER, BREVO_SMTP_KEY)
+            server.sendmail(FROM_EMAIL, to_email, msg.as_string())
+
+        logger.info("[email] Sent to %s via Brevo SMTP", to_email)
     except Exception as exc:
         logger.error("[email] Failed to send to %s: %s", to_email, exc)
 
