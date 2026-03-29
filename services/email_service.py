@@ -1,11 +1,15 @@
 import os
 import logging
 
+import requests as http
+
 logger = logging.getLogger(__name__)
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@ubevera.com")
-FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "Ubevera")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@ubevera.com")
+FROM_NAME = os.getenv("FROM_NAME", "Ubevera")
+
+_BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 # ---------------------------------------------------------------------------
@@ -82,26 +86,32 @@ def _reset_password_html(link: str) -> str:
 # ---------------------------------------------------------------------------
 
 def send_email(to_email: str, subject: str, body: str, html: str | None = None) -> None:
-    """Send an email via SendGrid. Falls back to console when SENDGRID_API_KEY is not set."""
-    if not SENDGRID_API_KEY:
-        logger.info("[email] SENDGRID_API_KEY not set — printing to console instead.")
+    """Send an email via Brevo. Falls back to console when BREVO_API_KEY is not set."""
+    if not BREVO_API_KEY:
+        logger.info("[email] BREVO_API_KEY not set — printing to console instead.")
         print(f"\n[email] To: {to_email}\nSubject: {subject}\n\n{body}\n")
         return
 
+    payload: dict = {
+        "sender": {"name": FROM_NAME, "email": FROM_EMAIL},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "textContent": body,
+    }
+    if html:
+        payload["htmlContent"] = html
+
     try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, Email, To, Content
-
-        message = Mail()
-        message.from_email = Email(FROM_EMAIL, FROM_NAME)
-        message.to = [To(to_email)]
-        message.subject = subject
-        message.add_content(Content("text/plain", body))
-        if html:
-            message.add_content(Content("text/html", html))
-
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
+        response = http.post(
+            _BREVO_SEND_URL,
+            headers={
+                "api-key": BREVO_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=10,
+        )
+        response.raise_for_status()
         logger.info("[email] Sent to %s — status %s", to_email, response.status_code)
     except Exception as exc:
         logger.error("[email] Failed to send to %s: %s", to_email, exc)

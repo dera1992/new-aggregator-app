@@ -43,8 +43,7 @@ gunicorn==21.2.0
 # Payments
 stripe>=8.0.0
 
-# Email
-sendgrid==6.11.0
+# Email (Brevo transactional API — uses requests, no extra package needed)
 
 # Monitoring
 sentry-sdk[flask]==2.19.2

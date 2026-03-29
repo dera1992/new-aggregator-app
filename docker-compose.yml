@@ -23,9 +23,9 @@ services:
       STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
       STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
       STRIPE_STARTER_PRICE_ID: "${STRIPE_STARTER_PRICE_ID}"
-      SENDGRID_API_KEY: "${SENDGRID_API_KEY}"
-      SENDGRID_FROM_EMAIL: "${SENDGRID_FROM_EMAIL}"
-      SENDGRID_FROM_NAME: "Ubevera"
+      BREVO_API_KEY: "${BREVO_API_KEY}"
+      FROM_EMAIL: "${FROM_EMAIL}"
+      FROM_NAME: "Ubevera"
     command: ["/entrypoint.sh", "gunicorn", "-b", "0.0.0.0:8080", "--access-logfile", "-", "app:app"]
     volumes:
       - uploads-data:/app/uploads
