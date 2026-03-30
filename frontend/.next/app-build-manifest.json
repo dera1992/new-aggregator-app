@@ -40,6 +40,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(app)/story/[clusterId]/page.js"
+    ],
+    "/(app)/story/[clusterId]/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(app)/story/[clusterId]/layout.js"
     ]
   }
 }

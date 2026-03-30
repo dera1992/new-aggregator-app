@@ -16,22 +16,27 @@ const manrope = Manrope({
   display: 'swap',
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
   title: { default: 'Ubevera', template: '%s | Ubevera' },
   description: 'Real-time news intelligence for creators, journalists, and analysts.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(siteUrl),
+  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     siteName: 'Ubevera',
     title: 'Ubevera — Real-time News Intelligence',
     description: 'Track breaking stories, summarize instantly, publish faster.',
-    images: [{ url: '/android-chrome-512x512.png', width: 512, height: 512, alt: 'Ubevera' }],
+    url: siteUrl,
+    locale: 'en_US',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Ubevera — Real-time News Intelligence' }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Ubevera — Real-time News Intelligence',
     description: 'Track breaking stories, summarize instantly, publish faster.',
-    images: ['/android-chrome-512x512.png'],
+    images: ['/og-image.png'],
   },
   icons: {
     icon: '/favicon.ico',
@@ -75,6 +80,20 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-sans`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Ubevera',
+              url: siteUrl,
+              logo: `${siteUrl}/android-chrome-512x512.png`,
+              description: 'Real-time news intelligence for creators, journalists, and analysts.',
+              sameAs: [],
+            }),
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

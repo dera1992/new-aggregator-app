@@ -200,7 +200,11 @@ export default function FeedPage() {
                 {story.summary}
               </p>
               <div className="flex flex-wrap gap-2">
-                {story.sources.map((source) => (
+                {story.sources
+                  .filter((source, index, self) =>
+                    index === self.findIndex((s) => s.name === source.name)
+                  )
+                  .map((source) => (
                   <a
                     key={source.url}
                     href={source.url}
