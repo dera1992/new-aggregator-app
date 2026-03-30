@@ -158,8 +158,8 @@ def test_credits_reset_when_overdue(app_ctx):
         credits_module.check_and_deduct_credits(user, "comment", cache_hit=False)
 
         db.session.refresh(user)
-        # Should have reset to 20 then deducted 1 (comment cost)
-        assert user.ai_credits_balance == 19
+        # Should have reset to 30 then deducted 1 (comment cost)
+        assert user.ai_credits_balance == 29
         assert user.ai_credits_reset_at > datetime.utcnow()
 
 

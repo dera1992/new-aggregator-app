@@ -14,6 +14,7 @@ def test_auth_flow_register_confirm_reset_change(tmp_path, monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "test-secret")
     monkeypatch.setenv("RUN_BACKGROUND_JOBS", "false")
     monkeypatch.setenv("TESTING", "1")
+    monkeypatch.setenv("CORS_ORIGINS", "*")
 
     app_module = importlib.import_module("app")
     importlib.reload(app_module)
