@@ -1,7 +1,7 @@
 {
   "/page": "app/page.js",
-  "/(auth)/forgot-password/page": "app/(auth)/forgot-password/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/about/page": "app/about/page.js",
   "/(app)/feed/page": "app/(app)/feed/page.js",
+  "/pricing/page": "app/pricing/page.js",
   "/(app)/story/[clusterId]/page": "app/(app)/story/[clusterId]/page.js"
 }

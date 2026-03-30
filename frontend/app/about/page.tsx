@@ -145,6 +145,30 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Contact */}
+      <section className="bg-white px-4 py-16 sm:px-6 lg:px-8 dark:bg-slate-900">
+        <div className="mx-auto max-w-4xl">
+          <div className="crystal-panel rounded-2xl p-8 sm:p-10 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#4A90E2]">
+              Get in touch
+            </p>
+            <h2 className="font-heading mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Have a question or feedback?
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+              We&apos;d love to hear from you. Reach out to us directly at{' '}
+              <a
+                href="mailto:contact@ubevera.com"
+                className="font-medium text-[#4A90E2] hover:underline"
+              >
+                contact@ubevera.com
+              </a>
+              {' '}and we&apos;ll get back to you as soon as possible.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="crystal-panel mx-auto max-w-3xl rounded-2xl p-10 text-center">
